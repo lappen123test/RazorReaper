@@ -1,0 +1,494 @@
+﻿@page "/paintings"
+@using System.Diagnostics
+@using RazorReaper.Components.Shared
+
+<div class="app-container">
+    <RazorReaper.Components.Shared.SharedNavbar />
+
+    <main class="main-content">
+        <header class="page-header">
+            <h1 class="page-title">Paintings</h1>
+            <p class="page-subtitle">Manage your ingame paintings</p>
+        </header>
+
+        <div style="display: grid; grid-template-columns: 320px 1fr; gap: 2rem; height: calc(100vh - 200px);">
+
+            <div class="content-card" style="height: fit-content;">
+                <h3 class="mb-3 text-white">Folder Management</h3>
+
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <button class="btn btn-primary" @onclick="OpenMyPaintingsFolder" style="width: 100%; justify-content: flex-start;">
+                        <svg style="width: 16px; height: 16px; margin-right: 0.75rem;" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                        </svg>
+                        Open MyPaintings Folder
+                    </button>
+
+                    <button class="btn btn-secondary" @onclick="CreateMyPaintingsFolder" style="width: 100%; justify-content: flex-start;">
+                        <svg style="width: 16px; height: 16px; margin-right: 0.75rem;" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M5 4a3 3 0 00-3 3v6a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H9L7 2H5zM8 8a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1zm1 4a1 1 0 100 2h2a1 1 0 100-2H9z" clip-rule="evenodd" />
+                        </svg>
+                        Create MyPaintings Folder
+                    </button>
+                </div>
+
+                @if (!string.IsNullOrEmpty(statusMessage))
+                {
+                    <div class="mt-3 status-message @GetStatusClass()">
+                        <div style="font-weight: 600;">@statusMessage</div>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(arkPath))
+                {
+                    <div class="mt-3 ark-path-info">
+                        <div style="color: var(--accent-green); font-weight: 600; margin-bottom: 0.5rem;">ARK Installation Found:</div>
+                        <div style="color: var(--text-secondary); font-size: 0.85rem; word-break: break-all;">@arkPath</div>
+                        @if (fileCount > 0)
+                        {
+                            <div style="color: var(--accent-green); font-size: 0.85rem; margin-top: 0.5rem;">📁 @fileCount painting files found</div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 1.5rem; height: 100%;">
+
+                <div class="content-card">
+                    <h3 class="mb-3 text-white">Get Canvas - Templates By ArkTested</h3>
+
+                    <div style="display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: center;">
+                        <div>
+                            <p style="color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.6;">
+                                Organized collection of ARK-themed paintings and canvas images.
+                                Includes labeled icons for dinos, items, structures, and more.
+                                Helps players customize storage, signs, and base visuals.
+                            </p>
+
+                            <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                                <div class="feature-tag">📄 Templates</div>
+                                <div class="feature-tag">📂 Sorted Categories</div>
+                                <div class="feature-tag">🔖 Label Ready</div>
+                            </div>
+                        </div>
+
+                        <div style="text-align: center;">
+                            <div class="icon-circle white">
+                                <svg style="width: 40px; height: 40px; color: var(--background-dark);" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn btn-primary" @onclick="OpenCanvasWebsite">
+                            <svg style="width: 16px; height: 16px; margin-right: 0.5rem;" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                            Download Canvas Here
+                        </button>
+                    </div>
+                </div>
+
+                <div class="content-card" style="flex: 1;">
+                    <h3 class="mb-3 text-white">ARK Canvas Maker Tool</h3>
+
+                    <div style="display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: center; margin-bottom: 2rem;">
+                        <div>
+                            <p style="color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.6;">
+                                Specialized tool for creating custom canvas paintings in ARK: Survival Evolved.
+                                Convert your artwork into the proper format for in-game canvas items.
+                            </p>
+
+                            <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                                <div class="feature-tag">⚒️ ARK Specific</div>
+                                <div class="feature-tag">🎮 Game Integration</div>
+                                <div class="feature-tag">📐 Format Conversion</div>
+                            </div>
+                        </div>
+
+                        <div style="text-align: center;">
+                            <div class="icon-circle dark">
+                                <svg style="width: 40px; height: 40px; color: white;" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 13a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zM12 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1V4zM12 13a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-3z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+                        <button class="btn btn-primary" @onclick="OpenArkCanvasMaker" style="flex: 1;">
+                            <svg style="width: 16px; height: 16px; margin-right: 0.5rem;" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                            Download ARK Canvas Maker
+                        </button>
+
+                        <button class="btn btn-secondary" @onclick="ShowArkCanvasInfo">
+                            <svg style="width: 16px; height: 16px; margin-right: 0.5rem;" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                            </svg>
+                            How to Use
+                        </button>
+                    </div>
+
+                    @if (showArkInfo)
+                    {
+                        <div class="canvas-guide">
+                            <h4 style="color: var(--text-primary); margin-bottom: 1rem; font-weight: 600;">ARK Canvas Setup Guide</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+                                <div class="guide-step">
+                                    <h5 style="color: var(--text-primary); margin-bottom: 0.5rem; font-size: 0.9rem;">📝 Step 1: Prepare</h5>
+                                    <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5;">Create your artwork in Canvas or any image editor. Recommended size: 256x256 pixels.</p>
+                                </div>
+                                <div class="guide-step">
+                                    <h5 style="color: var(--text-primary); margin-bottom: 0.5rem; font-size: 0.9rem;">🔧 Step 2: Convert</h5>
+                                    <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5;">Use ARK Canvas Maker to convert your image to ARK's canvas format (.arkpnt).</p>
+                                </div>
+                                <div class="guide-step">
+                                    <h5 style="color: var(--text-primary); margin-bottom: 0.5rem; font-size: 0.9rem;">🎮 Step 3: Import</h5>
+                                    <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5;">Place the converted file in your ARK game directory and import in-game.</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<style>
+    .feature-tag {
+        background: var(--background-hover);
+        color: var(--text-primary);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+
+        .feature-tag:hover {
+            background: var(--background-card);
+            border-color: var(--text-primary);
+        }
+
+        .feature-tag.orange {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--accent-orange);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+    .icon-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+        .icon-circle.white {
+            background: linear-gradient(135deg, #ffffff, #f3f4f6);
+        }
+
+        .icon-circle.dark {
+            background: linear-gradient(135deg, var(--background-hover), var(--border-color));
+            border: 1px solid var(--text-primary);
+        }
+
+    .status-message {
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 3px solid;
+    }
+
+    .status-success {
+        background: rgba(16, 185, 129, 0.1);
+        border-color: var(--accent-green);
+        color: var(--accent-green);
+    }
+
+    .status-error {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: var(--accent-red);
+        color: var(--accent-red);
+    }
+
+    .status-warning {
+        background: rgba(245, 158, 11, 0.1);
+        border-color: var(--accent-orange);
+        color: var(--accent-orange);
+    }
+
+    .status-info {
+        background: rgba(59, 130, 246, 0.1);
+        border-color: var(--accent-blue);
+        color: var(--accent-blue);
+    }
+
+    .ark-path-info {
+        padding: 1rem;
+        background: rgba(16, 185, 129, 0.1);
+        border-radius: 8px;
+        border-left: 3px solid var(--accent-green);
+    }
+
+    .canvas-guide {
+        background: var(--background-dark);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    .guide-step {
+        background: var(--background-dark);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 1rem;
+        transition: all 0.3s ease;
+    }
+
+        .guide-step:hover {
+            background: var(--background-hover);
+            border-color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+
+    .text-orange {
+        color: var(--accent-orange);
+    }
+</style>
+
+@code {
+    private string statusMessage = "";
+    private bool folderExists = false;
+    private string folderPath = "";
+    private string arkPath = "";
+    private int fileCount = 0;
+    private bool showArkInfo = false;
+
+    protected override Task OnInitializedAsync()
+    {
+        CheckFolderStatus();
+        return Task.CompletedTask;
+    }
+
+    private void OpenMyPaintingsFolder()
+    {
+        try
+        {
+            string? arkBasePath = ArkUtilities.FindArkPath();
+
+            if (arkBasePath == null)
+            {
+                statusMessage = "ARK installation not found. Please install ARK or check your installation.";
+                StateHasChanged();
+                return;
+            }
+
+            folderPath = Path.Combine(arkBasePath, "ShooterGame", "Saved", "MyPaintings");
+            arkPath = arkBasePath;
+
+            if (!Directory.Exists(arkPath))
+            {
+                statusMessage = "ARK: Survival Evolved not found in Steam directory. Please verify your ARK installation.";
+                StateHasChanged();
+                return;
+            }
+
+            if (!Directory.Exists(folderPath))
+            {
+                statusMessage = "MyPaintings folder doesn't exist. Create it first or ensure ARK has been launched at least once.";
+                folderExists = false;
+                StateHasChanged();
+                return;
+            }
+
+            folderExists = true;
+            CountFiles();
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = folderPath,
+                UseShellExecute = true
+            });
+
+            statusMessage = $"Opened MyPaintings folder successfully!";
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Error opening folder: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    private void CreateMyPaintingsFolder()
+    {
+        try
+        {
+            string? arkBasePath = ArkUtilities.FindArkPath();
+            if (arkBasePath == null)
+            {
+                statusMessage = "ARK installation not found. Cannot create MyPaintings folder.";
+                StateHasChanged();
+                return;
+            }
+
+            arkPath = arkBasePath;
+            folderPath = Path.Combine(arkBasePath, "ShooterGame", "Saved", "MyPaintings");
+
+            string arkExePath = Path.Combine(arkBasePath, "ShooterGame", "Binaries", "Win64", "ShooterGame.exe");
+            if (!File.Exists(arkExePath))
+            {
+                statusMessage = "ShooterGame.exe not found. Is ARK properly installed?";
+                StateHasChanged();
+                return;
+            }
+
+            string savedPath = Path.Combine(arkBasePath, "ShooterGame", "Saved");
+            if (!Directory.Exists(savedPath))
+            {
+                Directory.CreateDirectory(savedPath);
+            }
+
+            if (Directory.Exists(folderPath))
+            {
+                statusMessage = "MyPaintings folder already exists!";
+                folderExists = true;
+                CountFiles();
+            }
+            else
+            {
+                Directory.CreateDirectory(folderPath);
+                statusMessage = "MyPaintings folder created successfully!";
+                folderExists = true;
+                fileCount = 0;
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Error creating folder: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    private void CheckFolderStatus()
+    {
+        try
+        {
+            string? arkBasePath = ArkUtilities.FindArkPath();
+
+            if (arkBasePath != null)
+            {
+                arkPath = arkBasePath;
+                folderPath = Path.Combine(arkPath, "ShooterGame", "Saved", "MyPaintings");
+
+                folderExists = Directory.Exists(folderPath);
+
+                if (folderExists)
+                {
+                    CountFiles();
+                }
+                else
+                {
+                    fileCount = 0;
+                }
+            }
+            else
+            {
+                folderExists = false;
+                fileCount = 0;
+                folderPath = "";
+                arkPath = "";
+            }
+        }
+        catch (Exception)
+        {
+            folderExists = false;
+            fileCount = 0;
+            folderPath = "";
+            arkPath = "";
+        }
+    }
+
+    private void CountFiles()
+    {
+        try
+        {
+            if (folderExists && Directory.Exists(folderPath))
+            {
+                string[] files = Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories);
+                fileCount = files.Length;
+            }
+        }
+        catch (Exception)
+        {
+            fileCount = 0;
+        }
+    }
+
+    private void OpenCanvasWebsite()
+    {
+        try
+        {
+            string canvasUrl = "https://arktested.com/paintings";
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = canvasUrl,
+                UseShellExecute = true
+            });
+            statusMessage = "Opening Canvas download page...";
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Error opening website: {ex.Message}";
+        }
+        StateHasChanged();
+    }
+
+    private void OpenArkCanvasMaker()
+    {
+        try
+        {
+            string arkCanvasUrl = "https://github.com/CedrickGD/editor-download";
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = arkCanvasUrl,
+                UseShellExecute = true
+            });
+            statusMessage = "Opening ARK Canvas Maker download page...";
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Error opening ARK Canvas Maker: {ex.Message}";
+        }
+        StateHasChanged();
+    }
+
+    private void ShowArkCanvasInfo()
+    {
+        showArkInfo = !showArkInfo;
+        statusMessage = showArkInfo ? "Showing ARK Canvas setup guide" : "ARK Canvas guide hidden";
+        StateHasChanged();
+    }
+
+    private string GetStatusClass()
+    {
+        if (statusMessage.Contains("Error") || statusMessage.Contains("not found") || statusMessage.Contains("doesn't exist"))
+            return "status-error";
+        else if (statusMessage.Contains("exists") || statusMessage.Contains("already"))
+            return "status-warning";
+        else
+            return "status-success";
+    }
+}

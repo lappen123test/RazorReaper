@@ -1,0 +1,557 @@
+﻿.ini-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 1.5rem;
+    height: calc(100vh - 200px);
+}
+
+    .ini-layout .ini-operations-panel {
+        height: fit-content;
+        position: sticky;
+        top: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .ini-layout .file-operations {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .ini-layout .ini-btn {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 0.5rem;
+        padding: 0.6rem 0.8rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-decoration: none;
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        backdrop-filter: blur(5px);
+    }
+
+        .ini-layout .ini-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .ini-layout .ini-btn:hover::before {
+            left: 100%;
+        }
+
+        .ini-layout .ini-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .ini-layout .ini-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .ini-layout .ini-btn svg {
+            width: 14px;
+            height: 14px;
+            transition: transform 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .ini-layout .ini-btn:hover:not(:disabled) svg {
+            transform: scale(1.1);
+        }
+
+    .ini-layout .ini-status-message {
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 3px solid;
+        margin-top: 1rem;
+        position: relative;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(10px);
+        font-size: 0.8rem;
+    }
+
+    .ini-layout .status-success {
+        background: rgba(16, 185, 129, 0.12);
+        border-color: var(--accent-green);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .ini-layout .status-error {
+        background: rgba(239, 68, 68, 0.12);
+        border-color: var(--accent-red);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+
+    .ini-layout .status-warning {
+        background: rgba(245, 158, 11, 0.12);
+        border-color: var(--accent-orange);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+
+    .ini-layout .status-info {
+        background: rgba(59, 130, 246, 0.12);
+        border-color: var(--accent-blue);
+        color: #60a5fa;
+        border: 1px solid rgba(59, 130, 246, 0.25);
+    }
+
+    .ini-layout .status-content {
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
+
+    .ini-layout .path-info-display {
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        padding: 0.6rem;
+        font-family: 'Courier New', monospace;
+        font-size: 0.7rem;
+        word-break: break-all;
+        margin-top: 0.5rem;
+        color: #ffffff;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .ini-layout .water-surface-section {
+        margin-top: 0;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .ini-layout .water-info-clean {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+        .ini-layout .water-info-clean p {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+    .ini-layout .restore-info-clean {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+        .ini-layout .restore-info-clean p {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .ini-layout .restore-info-clean strong {
+            color: var(--text-primary);
+        }
+
+    .ini-layout .ini-main-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        height: 100%;
+    }
+
+    .ini-layout .presets-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .ini-layout .preset-button {
+        background: rgba(0, 0, 0, 0.08);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 0.75rem;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        text-align: left;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+    }
+
+        .ini-layout .preset-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .ini-layout .preset-button:hover::before {
+            left: 100%;
+        }
+
+        .ini-layout .preset-button:hover {
+            background: rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(12px);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .ini-layout .preset-button.active {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(16, 185, 129, 0.06));
+            backdrop-filter: blur(12px);
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+
+            .ini-layout .preset-button.active::after {
+                content: '✓';
+                position: absolute;
+                top: 0.4rem;
+                right: 0.4rem;
+                color: var(--accent-green);
+                font-weight: bold;
+                font-size: 1rem;
+            }
+
+    .ini-layout .preset-info {
+        width: 100%;
+    }
+
+    .ini-layout .preset-name {
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+        color: #ffffff;
+        font-size: 0.8rem;
+    }
+
+    .ini-layout .preset-description {
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        line-height: 1.3;
+    }
+
+    .ini-layout .ini-content-area {
+        order: 2;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 350px;
+    }
+
+    .ini-layout .ini-textarea {
+        flex: 1;
+        background: rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(8px);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 1rem;
+        font-family: 'Courier New', monospace;
+        font-size: 0.8rem;
+        resize: none;
+        min-height: 350px;
+        transition: all 0.3s ease;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+        .ini-layout .ini-textarea:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1), inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .ini-layout .ini-textarea::placeholder {
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+    .ini-layout .images-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .ini-layout .images-toggle-btn {
+        padding: 0.4rem 0.8rem;
+        background: rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        color: #ffffff;
+        cursor: pointer;
+        font-size: 0.75rem;
+        transition: all 0.3s ease;
+        font-weight: 600;
+    }
+
+        .ini-layout .images-toggle-btn:hover {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(12px);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+        }
+
+    .ini-layout .images-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1rem;
+    }
+
+    .ini-layout .image-item {
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+        .ini-layout .image-item:hover {
+            transform: translateY(-2px);
+        }
+
+    .ini-layout .image-preview {
+        width: 100%;
+        height: 100px;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        position: relative;
+    }
+
+        .ini-layout .image-preview:hover {
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .ini-layout .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .ini-layout .image-preview:hover img {
+            transform: scale(1.05);
+        }
+
+    .ini-layout .image-name {
+        margin-top: 0.5rem;
+        font-size: 0.75rem;
+        color: #ffffff;
+        font-weight: 600;
+    }
+
+    .ini-layout .content-card h3 {
+        color: #ffffff !important;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .ini-layout .text-white {
+        color: #ffffff !important;
+        font-weight: 600;
+    }
+
+    .ini-layout .text-secondary {
+        color: #cccccc !important;
+    }
+
+    .ini-layout .feature-tag {
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(8px);
+        color: var(--text-primary);
+        padding: 0.25rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        transition: all 0.3s ease;
+        display: inline-block;
+        margin: 0.2rem;
+    }
+
+        .ini-layout .feature-tag:hover {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(12px);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+    .ini-layout .icon-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+        .ini-layout .icon-circle.white {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .ini-layout .icon-circle svg {
+            width: 24px;
+            height: 24px;
+            color: var(--text-primary);
+        }
+
+    .ini-layout .section-info {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 1rem;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .ini-layout .section-description {
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        line-height: 1.5;
+    }
+
+    .ini-layout .content-card {
+        background: rgba(0, 0, 0, 0.08) !important;
+        backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 12px !important;
+        padding: 1.5rem !important;
+        margin-bottom: 1.5rem !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+
+        .ini-layout .content-card:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), 0 0 20px rgba(255, 255, 255, 0.05) !important;
+            border-color: rgba(255, 255, 255, 0.12) !important;
+        }
+
+@media (max-width: 768px) {
+    .ini-layout {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        height: auto;
+    }
+
+        .ini-layout .ini-operations-panel {
+            position: relative;
+            top: 0;
+            order: 2;
+        }
+
+        .ini-layout .ini-main-column {
+            order: 1;
+        }
+
+        .ini-layout .ini-content-area {
+            order: 1;
+        }
+
+        .ini-layout .presets-grid {
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.6rem;
+        }
+
+        .ini-layout .images-grid {
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.8rem;
+        }
+
+        .ini-layout .ini-btn {
+            justify-content: center;
+        }
+
+        .ini-layout .preset-button {
+            min-height: 55px;
+            padding: 0.6rem;
+        }
+
+        .ini-layout .ini-textarea {
+            min-height: 250px;
+            padding: 0.8rem;
+            font-size: 0.75rem;
+        }
+}
+
+@media (max-width: 480px) {
+    .ini-layout {
+        gap: 0.8rem;
+    }
+
+        .ini-layout .ini-btn {
+            padding: 0.8rem;
+            font-size: 0.75rem;
+        }
+
+        .ini-layout .preset-button {
+            padding: 0.6rem;
+            min-height: 50px;
+        }
+
+        .ini-layout .preset-name {
+            font-size: 0.75rem;
+        }
+
+        .ini-layout .preset-description {
+            font-size: 0.65rem;
+        }
+
+        .ini-layout .presets-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .ini-layout .images-grid {
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        }
+
+        .ini-layout .image-preview {
+            height: 80px;
+        }
+}

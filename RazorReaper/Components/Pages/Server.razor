@@ -1,0 +1,869 @@
+﻿@page "/server"
+@using System.Net
+@using System.Net.NetworkInformation
+@using System.Net.Sockets
+@using System.Text.Json
+@using Microsoft.Win32
+@using RazorReaper.Components.Shared
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+<div class="app-container">
+    <RazorReaper.Components.Shared.SharedNavbar />
+
+    <main class="main-content">
+        <header class="page-header">
+            <h1 class="page-title">Server Management</h1>
+            <p class="page-subtitle">Connect and manage ARK servers</p>
+        </header>
+
+        <div class="server-layout">
+            <div class="content-card server-connection-panel">
+                <h3>Server Connection</h3>
+
+                <div class="connection-form">
+                    <div>
+                        <label class="input-label">Server IP Address</label>
+                        <input @bind="serverInput"
+                               @onkeypress="@(async (e) => { if (e.Key == "Enter") await QueryServer(); })"
+                               placeholder="141.98.157.224:27015"
+                               class="server-input" />
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(serverInput))
+                    {
+                        <div>
+                            <label class="input-label">Steam Connect URL</label>
+                            <div class="url-input-group">
+                                <input value="@GetSteamUrl()" readonly class="server-input readonly" />
+                                <button class="server-btn copy-btn" @onclick="CopySteamUrl">📋</button>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="button-grid">
+                        <button class="server-btn query" @onclick="QueryServer" disabled="@isQuerying">
+                            @if (isQuerying)
+                            {
+                                <div class="server-spinner"></div>
+                                <span>Query</span>
+                            }
+                            else
+                            {
+                                <span>Query</span>
+                            }
+                        </button>
+
+                        <button class="server-btn connect" @onclick="ConnectToServer" disabled="@(currentServer == null)">
+                            Connect
+                        </button>
+                    </div>
+
+                    <div class="button-grid">
+                        <button class="server-btn save" @onclick="SaveServer" disabled="@(currentServer == null)">
+                            Save
+                        </button>
+
+                        <button class="server-btn favorite" @onclick="AddToSteamFavorites" disabled="@(currentServer == null)">
+                            Add to Steam
+                        </button>
+                    </div>
+
+                    <button class="server-btn browser" @onclick="OpenSteamBrowser">
+                        Steam Browser
+                    </button>
+                </div>
+
+                @if (!string.IsNullOrEmpty(statusMessage))
+                {
+                    <div class="server-status-message @GetStatusClass()">
+                        <div>@statusMessage</div>
+                    </div>
+                }
+
+                @if (showFavoritesSuccess)
+                {
+                    <div class="favorites-success">
+                        ✅ Server successfully added to Steam favorites!<br />
+                        <small>Check Steam → View → Servers → Favorites tab</small>
+                    </div>
+                }
+            </div>
+
+            <div class="main-column">
+                @if (currentServer != null && currentServer.IsOnline)
+                {
+                    <div class="content-card">
+                        <h4 style="color: var(--text-primary); margin-bottom: 1rem; font-size: 1.1rem; font-weight: 600;">@currentServer.Name</h4>
+                        <div class="server-details-grid">
+                            <div class="detail-column">
+                                <div class="detail-row">
+                                    <span class="detail-label">Status:</span>
+                                    <span class="text-green detail-value">Online</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Address:</span>
+                                    <span class="detail-value">@currentServer.IpAddress:@currentServer.Port</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Players:</span>
+                                    <span class="text-green detail-value">@currentServer.CurrentPlayers/@currentServer.MaxPlayers</span>
+                                </div>
+                            </div>
+                            <div class="detail-column">
+                                <div class="detail-row">
+                                    <span class="detail-label">Map:</span>
+                                    <span class="detail-value">@currentServer.CurrentMap</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Version:</span>
+                                    <span class="detail-value">@currentServer.Version</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Query Port:</span>
+                                    <span class="detail-value">@currentServer.QueryPort</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @if (showServerInfo && selectedServer != null)
+                {
+                    <div class="content-card">
+                        <div class="server-info-header">
+                            <h3>@selectedServer.Name</h3>
+                            <button class="server-btn close-btn" @onclick="HideServerInfo">✕</button>
+                        </div>
+
+                        <div class="server-details-grid">
+                            <div class="detail-column">
+                                <div class="detail-row">
+                                    <span class="text-secondary">Status:</span>
+                                    <span class="@(selectedServer.IsOnline ? "text-green" : "text-red")">
+                                        @(selectedServer.IsOnline ? "Online" : "Offline")
+                                    </span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="text-secondary">Address:</span>
+                                    <span class="text-white">@selectedServer.IpAddress:@selectedServer.Port</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="text-secondary">Players:</span>
+                                    <span class="text-green">@selectedServer.CurrentPlayers/@selectedServer.MaxPlayers</span>
+                                </div>
+                            </div>
+                            <div class="detail-column">
+                                <div class="detail-row">
+                                    <span class="text-secondary">Map:</span>
+                                    <span class="text-white">@selectedServer.CurrentMap</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="text-secondary">Version:</span>
+                                    <span class="text-white">@selectedServer.Version</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="text-secondary">Query:</span>
+                                    <span class="text-white">@selectedServer.QueryPort</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <div class="content-card saved-servers-section">
+                    <div class="section-header">
+                        <h3>Saved Servers</h3>
+                        <span class="text-secondary">@servers.Count servers</span>
+                    </div>
+
+                    <div class="servers-grid">
+                        @if (servers.Any())
+                        {
+                            @foreach (var server in servers)
+                            {
+                                <div class="server-item @(selectedServer == server ? "selected" : "")" @onclick="() => SelectServer(server)">
+                                    <div class="server-item-content">
+                                        <div class="server-status-dot @(server.IsOnline ? "online" : "offline")"></div>
+                                        <div class="server-item-info">
+                                            <div class="text-white server-name">@server.Name</div>
+                                            <div class="text-secondary server-address">@server.IpAddress:@server.Port</div>
+                                            @if (server.IsOnline)
+                                            {
+                                                <div class="text-green server-players">@server.CurrentPlayers/@server.MaxPlayers players</div>
+                                            }
+                                        </div>
+                                        <div class="server-actions">
+                                            <button class="server-action-btn" @onclick:stopPropagation="true" @onclick="() => SelectServer(server)">Info</button>
+                                            <button class="server-action-btn remove" @onclick:stopPropagation="true" @onclick="() => RemoveServer(server)">Remove</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-servers-state">
+                                <div class="empty-icon">📂</div>
+                                <div>No servers saved yet</div>
+                                <div class="empty-subtitle">Query and save servers to see them here</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="content-card troubleshooting-section">
+                    <div class="section-header">
+                        <h3>Troubleshooting</h3>
+                        <button class="toggle-btn" @onclick="ToggleTroubleshooting">
+                            @(showTroubleshooting ? "▼ Hide" : "▶ Show")
+                        </button>
+                    </div>
+
+                    @if (showTroubleshooting)
+                    {
+                        <div class="troubleshooting-grid">
+                            <div class="troubleshooting-item">
+                                <h4>🔧 Connection</h4>
+                                <ul>
+                                    <li>Check IP and port</li>
+                                    <li>Verify Steam is running</li>
+                                    <li>Disable VPN</li>
+                                    <li>Check firewall</li>
+                                </ul>
+                            </div>
+
+                            <div class="troubleshooting-item">
+                                <h4>🎮 Game Launch</h4>
+                                <ul>
+                                    <li>Restart Steam</li>
+                                    <li>Verify game files</li>
+                                    <li>Run as admin</li>
+                                    <li>Clear cache</li>
+                                </ul>
+                            </div>
+
+                            <div class="troubleshooting-item">
+                                <h4>⚠️ Query Issues</h4>
+                                <ul>
+                                    <li>Server offline</li>
+                                    <li>Port blocked</li>
+                                    <li>Try +1 port</li>
+                                    <li>No response</li>
+                                </ul>
+                            </div>
+
+                            <div class="troubleshooting-item">
+                                <h4>🔍 Ports</h4>
+                                <ul>
+                                    <li>Game: 7777-7784</li>
+                                    <li>Query: Game+12288</li>
+                                    <li>RCON: Game+2</li>
+                                    <li>Raw UDP: Game+3</li>
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+@code {
+    private string serverInput = "";
+    private string statusMessage = "";
+    private bool isQuerying = false;
+    private bool showTroubleshooting = false;
+    private bool showServerInfo = false;
+    private bool showFavoritesSuccess = false;
+    private List<GameServer> servers = new();
+    private GameServer? selectedServer;
+    private GameServer? currentServer;
+    private Timer? refreshTimer;
+    private bool isPageActive = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadServers();
+        StartAutoRefresh();
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("eval", @"
+            function fixServerInputs() {
+                const inputs = document.querySelectorAll('.server-input, input');
+                inputs.forEach(input => {
+                    if (input.classList.contains('server-input') || input.placeholder?.includes('141.98')) {
+                        input.style.pointerEvents = 'auto';
+                        input.style.zIndex = '99999';
+                        input.style.position = 'relative';
+                        input.style.userSelect = 'text';
+                        input.style.webkitUserSelect = 'text';
+                        input.style.cursor = 'text';
+                        input.disabled = false;
+                        input.readOnly = false;
+
+                        input.addEventListener('mousedown', function(e) {
+                            e.stopPropagation();
+                        });
+
+                        input.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            this.focus();
+                        });
+                    }
+                });
+            }
+
+            fixServerInputs();
+            setTimeout(fixServerInputs, 100);
+            setTimeout(fixServerInputs, 500);
+
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    setTimeout(fixServerInputs, 100);
+                }
+            });
+        ");
+        }
+    }
+
+    [JSInvokable]
+    public static void OnPageHidden()
+    {
+
+    }
+
+    [JSInvokable]
+    public static void OnPageVisible()
+    {
+
+    }
+
+    private void StartAutoRefresh()
+    {
+
+        refreshTimer = new Timer(async _ =>
+        {
+            if (isPageActive && servers.Any())
+            {
+                await InvokeAsync(async () =>
+                {
+                    foreach (var server in servers)
+                    {
+                        await UpdateServerStatus(server);
+                    }
+                    StateHasChanged();
+                });
+            }
+        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    public void Dispose()
+    {
+        refreshTimer?.Dispose();
+    }
+
+    private async Task LoadServers()
+    {
+        try
+        {
+            var json = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "razorReaperSavedServers");
+            if (!string.IsNullOrEmpty(json))
+            {
+                servers = JsonSerializer.Deserialize<List<GameServer>>(json) ?? new();
+
+                foreach (var server in servers)
+                {
+                    _ = UpdateServerStatus(server);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading servers: {ex.Message}");
+        }
+    }
+
+    private async Task SaveServersToStorage()
+    {
+        try
+        {
+            var json = JsonSerializer.Serialize(servers, new JsonSerializerOptions { WriteIndented = true });
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "razorReaperSavedServers", json);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving servers: {ex.Message}");
+        }
+    }
+
+    private async Task UpdateServerStatus(GameServer server)
+    {
+        try
+        {
+            var serverInfo = await QuerySourceServer(server.IpAddress, server.QueryPort);
+            if (serverInfo != null)
+            {
+                server.IsOnline = true;
+                server.CurrentPlayers = serverInfo.Players;
+                server.MaxPlayers = serverInfo.MaxPlayers;
+                server.CurrentMap = serverInfo.Map;
+                server.Version = serverInfo.Version;
+
+                if (!string.IsNullOrEmpty(serverInfo.Name) && serverInfo.Name != server.Name)
+                {
+                    server.Name = serverInfo.Name;
+                }
+            }
+            else
+            {
+                server.IsOnline = false;
+                server.CurrentPlayers = 0;
+            }
+        }
+        catch
+        {
+            server.IsOnline = false;
+            server.CurrentPlayers = 0;
+        }
+    }
+
+    private string GetSteamUrl()
+    {
+        if (string.IsNullOrWhiteSpace(serverInput)) return "";
+        var parts = serverInput.Split(':');
+        if (parts.Length != 2 || !int.TryParse(parts[1], out int port)) return "";
+
+        int gamePort = port - 12288;
+        if (gamePort <= 0) gamePort = port;
+
+        return $"steam://run/346110//+connect {parts[0]}:{gamePort}";
+    }
+
+    private async Task CopySteamUrl()
+    {
+        var url = GetSteamUrl();
+        if (string.IsNullOrEmpty(url)) return;
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", url);
+            statusMessage = "📋 Steam URL copied to clipboard!";
+        }
+        catch
+        {
+            statusMessage = "❌ Failed to copy URL to clipboard";
+        }
+        StateHasChanged();
+    }
+
+    private async Task QueryServer()
+    {
+        if (string.IsNullOrWhiteSpace(serverInput)) return;
+
+        isQuerying = true;
+        statusMessage = "";
+        showFavoritesSuccess = false;
+        StateHasChanged();
+
+        try
+        {
+            var parts = serverInput.Split(':');
+            if (parts.Length != 2 || !int.TryParse(parts[1], out int queryPort))
+            {
+                statusMessage = "❌ Invalid format. Use IP:QUERYPORT (e.g., 192.168.1.1:27015)";
+                isQuerying = false;
+                StateHasChanged();
+                return;
+            }
+
+            string ip = parts[0];
+            int gamePort = queryPort - 12288;
+            if (gamePort <= 0) gamePort = queryPort;
+
+            currentServer = new GameServer
+            {
+                IpAddress = ip,
+                Port = gamePort,
+                QueryPort = queryPort,
+                Name = $"ARK Server {ip}:{gamePort}",
+                IsOnline = false,
+                CurrentPlayers = 0,
+                MaxPlayers = 70,
+                CurrentMap = "Unknown",
+                Version = "Unknown"
+            };
+
+            var serverInfo = await QuerySourceServer(ip, queryPort);
+
+            if (serverInfo != null)
+            {
+                currentServer.IsOnline = true;
+                currentServer.Name = string.IsNullOrEmpty(serverInfo.Name) ? currentServer.Name : serverInfo.Name;
+                currentServer.CurrentPlayers = serverInfo.Players;
+                currentServer.MaxPlayers = serverInfo.MaxPlayers;
+                currentServer.CurrentMap = string.IsNullOrEmpty(serverInfo.Map) ? "Unknown" : serverInfo.Map;
+                currentServer.Version = string.IsNullOrEmpty(serverInfo.Version) ? "Unknown" : serverInfo.Version;
+                statusMessage = $"✅ Server online! Players: {serverInfo.Players}/{serverInfo.MaxPlayers} | Map: {serverInfo.Map}";
+            }
+            else
+            {
+                using var ping = new Ping();
+                var pingReply = await ping.SendPingAsync(ip, 5000);
+
+                if (pingReply.Status == IPStatus.Success)
+                {
+                    currentServer.IsOnline = true;
+                    statusMessage = $"✅ Server reachable! Ping: {pingReply.RoundtripTime}ms (Query failed)";
+                }
+                else
+                {
+                    statusMessage = "❌ Server is offline or unreachable";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"❌ Query failed: {ex.Message}";
+        }
+        finally
+        {
+            isQuerying = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<ServerQueryResult?> QuerySourceServer(string ip, int port)
+    {
+        try
+        {
+            using var client = new UdpClient();
+            client.Client.ReceiveTimeout = 10000;
+            client.Client.SendTimeout = 5000;
+
+            var endpoint = new IPEndPoint(IPAddress.Parse(ip), port);
+
+            var infoQuery = new byte[] {
+                0xFF, 0xFF, 0xFF, 0xFF,
+                0x54,
+                0x53, 0x6F, 0x75, 0x72, 0x63, 0x65, 0x20,
+                0x45, 0x6E, 0x67, 0x69, 0x6E, 0x65, 0x20,
+                0x51, 0x75, 0x65, 0x72, 0x79, 0x00
+            };
+
+            await client.SendAsync(infoQuery, infoQuery.Length, endpoint);
+            var response = await client.ReceiveAsync();
+
+            Console.WriteLine($"Query response length: {response.Buffer.Length} bytes");
+
+            if (response.Buffer.Length > 6)
+            {
+                var data = response.Buffer;
+                int offset = 4;
+
+                if (data[4] == 0x49)
+                {
+                    offset = 5;
+                    var protocol = data[offset++];
+                    Console.WriteLine($"Protocol version: {protocol}");
+
+                    var name = ReadString(data, ref offset);
+                    var map = ReadString(data, ref offset);
+                    var folder = ReadString(data, ref offset);
+                    var game = ReadString(data, ref offset);
+
+                    Console.WriteLine($"Server: {name}, Map: {map}, Game: {game}");
+
+                    if (offset + 2 < data.Length)
+                    {
+                        offset += 2;
+
+                        var players = data[offset++];
+                        var maxPlayers = data[offset++];
+                        var bots = data[offset++];
+
+                        Console.WriteLine($"Players: {players}/{maxPlayers}, Bots: {bots}");
+
+                        offset += 2;
+
+                        offset += 2;
+
+                        var version = ReadString(data, ref offset);
+                        Console.WriteLine($"Version: {version}");
+
+                        return new ServerQueryResult
+                        {
+                            Name = name,
+                            Map = map,
+                            Players = players,
+                            MaxPlayers = maxPlayers,
+                            Version = version
+                        };
+                    }
+                }
+                else if (data[4] == 0x41)
+                {
+                    Console.WriteLine("Received challenge response, sending challenge query...");
+
+                    var challenge = new byte[4];
+                    Array.Copy(data, 5, challenge, 0, 4);
+
+                    var challengeQuery = new byte[infoQuery.Length + 4];
+                    Array.Copy(infoQuery, challengeQuery, infoQuery.Length);
+                    Array.Copy(challenge, 0, challengeQuery, infoQuery.Length, 4);
+
+                    await client.SendAsync(challengeQuery, challengeQuery.Length, endpoint);
+                    var challengeResponse = await client.ReceiveAsync();
+
+                    return ProcessInfoResponse(challengeResponse.Buffer);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Query error for {ip}:{port} - {ex.Message}");
+        }
+        return null;
+    }
+
+    private ServerQueryResult? ProcessInfoResponse(byte[] data)
+    {
+        try
+        {
+            if (data.Length > 6 && data[4] == 0x49)
+            {
+                int offset = 5;
+                var protocol = data[offset++];
+
+                var name = ReadString(data, ref offset);
+                var map = ReadString(data, ref offset);
+                var folder = ReadString(data, ref offset);
+                var game = ReadString(data, ref offset);
+
+                if (offset + 2 < data.Length)
+                {
+                    offset += 2;
+                    var players = data[offset++];
+                    var maxPlayers = data[offset++];
+                    var bots = data[offset++];
+                    offset += 2;
+                    offset += 2;
+
+                    var version = ReadString(data, ref offset);
+
+                    return new ServerQueryResult
+                    {
+                        Name = name,
+                        Map = map,
+                        Players = players,
+                        MaxPlayers = maxPlayers,
+                        Version = version
+                    };
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error processing info response: {ex.Message}");
+        }
+        return null;
+    }
+
+    private string ReadString(byte[] data, ref int offset)
+    {
+        if (offset >= data.Length) return "";
+
+        var start = offset;
+        while (offset < data.Length && data[offset] != 0)
+        {
+            offset++;
+        }
+
+        if (offset > start)
+        {
+            try
+            {
+                var result = System.Text.Encoding.UTF8.GetString(data, start, offset - start);
+                offset++;
+                return result;
+            }
+            catch
+            {
+                var result = System.Text.Encoding.ASCII.GetString(data, start, offset - start);
+                offset++;
+                return result;
+            }
+        }
+
+        if (offset < data.Length) offset++;
+        return "";
+    }
+
+    private async Task SaveServer()
+    {
+        if (currentServer == null)
+        {
+            statusMessage = "❌ No server to save - please query a server first";
+            StateHasChanged();
+            return;
+        }
+
+        try
+        {
+            var existing = servers.FirstOrDefault(s => s.IpAddress == currentServer.IpAddress && s.QueryPort == currentServer.QueryPort);
+            if (existing != null)
+            {
+                existing.Name = currentServer.Name;
+                existing.IsOnline = currentServer.IsOnline;
+                existing.CurrentPlayers = currentServer.CurrentPlayers;
+                existing.MaxPlayers = currentServer.MaxPlayers;
+                existing.CurrentMap = currentServer.CurrentMap;
+                existing.Version = currentServer.Version;
+                statusMessage = $"💾 Server '{currentServer.Name}' updated in local list!";
+            }
+            else
+            {
+                servers.Add(currentServer);
+                statusMessage = $"💾 Server '{currentServer.Name}' saved to local list! Total servers: {servers.Count}";
+            }
+
+            await SaveServersToStorage();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"❌ Failed to save server: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    private async Task RemoveServer(GameServer server)
+    {
+        servers.Remove(server);
+        await SaveServersToStorage();
+        if (selectedServer == server)
+        {
+            selectedServer = null;
+            showServerInfo = false;
+        }
+        StateHasChanged();
+    }
+
+    private async Task ConnectToServer()
+    {
+        if (currentServer == null) return;
+
+        try
+        {
+            var steamUrl = $"steam://run/346110//+connect {currentServer.IpAddress}:{currentServer.Port}";
+            await JSRuntime.InvokeVoidAsync("window.open", steamUrl, "_blank");
+            statusMessage = $"🚀 Launching ARK via Steam...";
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"❌ Connection failed: {ex.Message}";
+        }
+        StateHasChanged();
+    }
+
+    private async Task AddToSteamFavorites()
+    {
+        if (currentServer == null)
+        {
+            statusMessage = "❌ No server to add to favorites - query a server first";
+            return;
+        }
+
+        try
+        {
+            await SaveServer();
+
+            string steamFavoriteUrl = $"steam://friends/joingame/{currentServer.IpAddress}:{currentServer.Port}";
+            await JSRuntime.InvokeVoidAsync("window.open", steamFavoriteUrl, "_blank");
+
+            showFavoritesSuccess = true;
+            statusMessage = $"⭐ Adding '{currentServer.Name}' to Steam favorites!";
+
+            _ = Task.Delay(5000).ContinueWith(_ =>
+            {
+                showFavoritesSuccess = false;
+                StateHasChanged();
+            });
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"❌ Failed to add to favorites: {ex.Message}";
+        }
+        StateHasChanged();
+    }
+
+    private async Task OpenSteamBrowser()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("window.open", "steam://open/servers", "_blank");
+            statusMessage = "🎮 Opening Steam server browser...";
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"❌ Failed to open Steam browser: {ex.Message}";
+        }
+        StateHasChanged();
+    }
+
+    private void SelectServer(GameServer server)
+    {
+        selectedServer = server;
+        showServerInfo = true;
+        serverInput = $"{server.IpAddress}:{server.QueryPort}";
+        currentServer = server;
+
+        _ = UpdateServerStatus(server);
+    }
+
+    private void HideServerInfo()
+    {
+        showServerInfo = false;
+        selectedServer = null;
+    }
+
+    private void ToggleTroubleshooting()
+    {
+        showTroubleshooting = !showTroubleshooting;
+    }
+
+    private string GetStatusClass()
+    {
+        if (statusMessage.Contains("❌")) return "server-status-error";
+        if (statusMessage.Contains("⚠️")) return "server-status-warning";
+        return "server-status-success";
+    }
+
+    public class ServerQueryResult
+    {
+        public string Name { get; set; } = "";
+        public string Map { get; set; } = "";
+        public int Players { get; set; }
+        public int MaxPlayers { get; set; }
+        public string Version { get; set; } = "";
+    }
+
+    public class GameServer
+    {
+        public string Name { get; set; } = "";
+        public string IpAddress { get; set; } = "";
+        public int Port { get; set; }
+        public int QueryPort { get; set; }
+        public bool IsOnline { get; set; }
+        public int CurrentPlayers { get; set; }
+        public int MaxPlayers { get; set; } = 70;
+        public string CurrentMap { get; set; } = "Unknown";
+        public string Version { get; set; } = "Unknown";
+    }
+}

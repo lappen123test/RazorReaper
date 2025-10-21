@@ -1,0 +1,647 @@
+﻿@page "/autoclicker"
+@using System.Runtime.InteropServices
+@using System.Timers
+@using System.Drawing
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+<div class="app-container">
+    <RazorReaper.Components.Shared.SharedNavbar />
+
+    <main class="main-content">
+        <header class="page-header">
+            <h1 class="page-title">Auto Clicker</h1>
+            <p class="page-subtitle">Advanced mouse automation tool</p>
+        </header>
+
+        <div class="autoclicker-layout">
+            <div class="control-panel">
+                <div class="content-card">
+                    <h3>Click Settings</h3>
+
+                    <div class="setting-group">
+                        <label class="setting-label">Click Interval</label>
+                        <div class="interval-inputs">
+                            <div class="time-input-group">
+                                <input type="number" @bind="hours" min="0" max="99" class="time-input" />
+                                <span class="time-label">Hours</span>
+                            </div>
+                            <div class="time-input-group">
+                                <input type="number" @bind="minutes" min="0" max="59" class="time-input" />
+                                <span class="time-label">Minutes</span>
+                            </div>
+                            <div class="time-input-group">
+                                <input type="number" @bind="seconds" min="0" max="59" class="time-input" />
+                                <span class="time-label">Seconds</span>
+                            </div>
+                            <div class="time-input-group">
+                                <input type="number" @bind="milliseconds" min="0" max="999" class="time-input" />
+                                <span class="time-label">Milliseconds</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">Mouse Button</label>
+                        <div class="button-select">
+                            <button class="select-btn @(mouseButton == MouseButton.Left ? "active" : "")"
+                                    @onclick="() => mouseButton = MouseButton.Left">
+                                Left
+                            </button>
+                            <button class="select-btn @(mouseButton == MouseButton.Middle ? "active" : "")"
+                                    @onclick="() => mouseButton = MouseButton.Middle">
+                                Middle
+                            </button>
+                            <button class="select-btn @(mouseButton == MouseButton.Right ? "active" : "")"
+                                    @onclick="() => mouseButton = MouseButton.Right">
+                                Right
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">Click Type</label>
+                        <div class="button-select">
+                            <button class="select-btn @(clickType == ClickType.Single ? "active" : "")"
+                                    @onclick="() => clickType = ClickType.Single">
+                                Single
+                            </button>
+                            <button class="select-btn @(clickType == ClickType.Double ? "active" : "")"
+                                    @onclick="() => clickType = ClickType.Double">
+                                Double
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">Repeat</label>
+                        <div class="repeat-options">
+                            <div class="radio-group">
+                                <input type="radio" id="repeat-infinite" name="repeat" checked="@(repeatMode == RepeatMode.Infinite)"
+                                       @onchange="() => repeatMode = RepeatMode.Infinite" />
+                                <label for="repeat-infinite">Repeat until stopped</label>
+                            </div>
+                            <div class="radio-group">
+                                <input type="radio" id="repeat-count" name="repeat" checked="@(repeatMode == RepeatMode.Count)"
+                                       @onchange="() => repeatMode = RepeatMode.Count" />
+                                <label for="repeat-count">Repeat</label>
+                                <input type="number" @bind="repeatCount" min="1" max="999999" class="repeat-input"
+                                       disabled="@(repeatMode != RepeatMode.Count)" />
+                                <span>times</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <h3>Hotkey</h3>
+
+                    <div class="hotkey-group">
+                        <div class="hotkey-item">
+                            <span class="hotkey-label">Start/Stop Hotkey</span>
+                            <button class="hotkey-btn @(recordingKey ? "recording" : "")"
+                                    @onclick="StartHotkeyRecording"
+                                    @onkeydown="CaptureHotkey"
+                                    @onkeydown:preventDefault="recordingKey"
+                                    tabindex="0">
+                                @(recordingKey ? "Press any key..." : hotkey)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="hotkey-info">
+                        <svg fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                        <span>Current hotkey: @hotkey (works globally)</span>
+                    </div>
+                </div>
+
+                <div class="control-buttons">
+                    <button class="btn btn-primary @(isRunning ? "btn-stop" : "btn-start")"
+                            @onclick="ToggleClicking" disabled="@(!IsValidInterval())">
+                        @(isRunning ? "Stop" : "Start") (@hotkey)
+                    </button>
+                    <button class="btn btn-secondary" @onclick="ResetStats">
+                        Reset
+                    </button>
+                </div>
+            </div>
+
+            <div class="status-panel">
+                <div class="content-card">
+                    <h3>Click Position</h3>
+
+                    <div class="position-options">
+                        <div class="radio-group">
+                            <input type="radio" id="pos-current" name="position" checked="@(positionMode == PositionMode.Current)"
+                                   @onchange="() => positionMode = PositionMode.Current" />
+                            <label for="pos-current">Current cursor position</label>
+                        </div>
+                        <div class="radio-group">
+                            <input type="radio" id="pos-fixed" name="position" checked="@(positionMode == PositionMode.Fixed)"
+                                   @onchange="() => { positionMode = PositionMode.Fixed; }" />
+                            <label for="pos-fixed">Fixed position</label>
+                        </div>
+                    </div>
+
+                    @if (positionMode == PositionMode.Fixed)
+                    {
+                        <div class="position-controls">
+                            <div class="coord-inputs">
+                                <div class="coord-group">
+                                    <label>X:</label>
+                                    <input type="number" @bind="fixedX" class="coord-input" />
+                                </div>
+                                <div class="coord-group">
+                                    <label>Y:</label>
+                                    <input type="number" @bind="fixedY" class="coord-input" />
+                                </div>
+                            </div>
+                            <button class="pick-btn" @onclick="StartPickLocation" disabled="@pickingLocation">
+                                <svg fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                </svg>
+                                @(pickingLocation ? "Click anywhere..." : "Pick Location")
+                            </button>
+                        </div>
+                    }
+
+                    <div class="current-position">
+                        <span class="position-label">Current Mouse Position:</span>
+                        <span class="position-value">X: @currentMouseX, Y: @currentMouseY</span>
+                    </div>
+                </div>
+
+                <div class="content-card autoclicker-status-card @(isRunning ? "active" : "")">
+                    <div class="autoclicker-status-header">
+                        <div class="autoclicker-status-indicator @(isRunning ? "running" : "stopped")"></div>
+                        <h3>Status</h3>
+                    </div>
+
+                    <div class="status-info">
+                        <div class="status-row">
+                            <span>State:</span>
+                            <span class="status-value @(isRunning ? "text-green" : "text-red")">
+                                @(isRunning ? "Running" : "Stopped")
+                            </span>
+                        </div>
+                        <div class="status-row">
+                            <span>Clicks:</span>
+                            <span class="status-value">@clickCount</span>
+                        </div>
+                        @if (repeatMode == RepeatMode.Count)
+                        {
+                            <div class="status-row">
+                                <span>Progress:</span>
+                                <span class="status-value">@clickCount / @repeatCount</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: @(GetProgressPercentage())%"></div>
+                            </div>
+                        }
+                        <div class="status-row">
+                            <span>Interval:</span>
+                            <span class="status-value">@GetIntervalDisplay()</span>
+                        </div>
+                        @if (isRunning && nextClickTime != null)
+                        {
+                            <div class="status-row">
+                                <span>Next Click:</span>
+                                <span class="status-value">@GetNextClickTime()</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+@code {
+    public enum MouseButton { Left, Middle, Right }
+    public enum ClickType { Single, Double }
+    public enum RepeatMode { Infinite, Count }
+    public enum PositionMode { Current, Fixed }
+
+    private int hours = 0;
+    private int minutes = 0;
+    private int seconds = 1;
+    private int milliseconds = 0;
+
+    private MouseButton mouseButton = MouseButton.Left;
+    private ClickType clickType = ClickType.Single;
+    private RepeatMode repeatMode = RepeatMode.Infinite;
+    private int repeatCount = 10;
+    private PositionMode positionMode = PositionMode.Current;
+
+    private int fixedX = 0;
+    private int fixedY = 0;
+    private int currentMouseX = 0;
+    private int currentMouseY = 0;
+    private bool pickingLocation = false;
+
+    private bool isRunning = false;
+    private int clickCount = 0;
+    private Timer? clickTimer;
+    private Timer? mouseTrackingTimer;
+    private DateTime? nextClickTime;
+
+    private string hotkey = "F6";
+    private bool recordingKey = false;
+    private bool hotkeyRegistered = false;
+    private int currentHotkeyCode = 0x75; // F6
+
+    [DllImport("user32.dll")]
+    private static extern void mouse_event(uint dwFlags, int dx, int dy, uint cButtons, uint dwExtraInfo);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetCursorPos(out POINT lpPoint);
+
+    [DllImport("user32.dll")]
+    private static extern bool SetCursorPos(int x, int y);
+
+    [DllImport("user32.dll")]
+    private static extern short GetAsyncKeyState(int vKey);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr GetConsoleWindow();
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct POINT
+    {
+        public int X;
+        public int Y;
+    }
+
+    private const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
+    private const uint MOUSEEVENTF_LEFTUP = 0x0004;
+    private const uint MOUSEEVENTF_RIGHTDOWN = 0x0008;
+    private const uint MOUSEEVENTF_RIGHTUP = 0x0010;
+    private const uint MOUSEEVENTF_MIDDLEDOWN = 0x0020;
+    private const uint MOUSEEVENTF_MIDDLEUP = 0x0040;
+    private const uint MOUSEEVENTF_ABSOLUTE = 0x8000;
+    private const uint MOUSEEVENTF_MOVE = 0x0001;
+
+    protected override async Task OnInitializedAsync()
+    {
+        mouseTrackingTimer = new Timer(100);
+        mouseTrackingTimer.Elapsed += UpdateMousePosition;
+        mouseTrackingTimer.Start();
+
+        _ = Task.Run(MonitorHotkey);
+
+        await base.OnInitializedAsync();
+    }
+
+    private void UpdateMousePosition(object? sender, ElapsedEventArgs e)
+    {
+        if (GetCursorPos(out POINT point))
+        {
+            currentMouseX = point.X;
+            currentMouseY = point.Y;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task MonitorHotkey()
+    {
+        bool wasPressed = false;
+
+        while (true)
+        {
+            try
+            {
+                bool isPressed = (GetAsyncKeyState(currentHotkeyCode) & 0x8000) != 0;
+
+                if (isPressed && !wasPressed)
+                {
+                    await InvokeAsync(() => ToggleClicking());
+                }
+
+                wasPressed = isPressed;
+                await Task.Delay(50);
+            }
+            catch
+            {
+                await Task.Delay(100);
+            }
+        }
+    }
+
+    private void StartHotkeyRecording()
+    {
+        recordingKey = true;
+        StateHasChanged();
+    }
+
+    private void CaptureHotkey(KeyboardEventArgs e)
+    {
+        if (recordingKey)
+        {
+            recordingKey = false;
+
+            var keyName = e.Key.ToUpper();
+
+            // Handle special key names from browser
+            if (keyName.StartsWith("F") && int.TryParse(keyName.Substring(1), out int fnum))
+            {
+                keyName = $"F{fnum}";
+            }
+            else if (keyName == " ")
+            {
+                keyName = "SPACE";
+            }
+            else if (keyName.Length > 1)
+            {
+                // Handle other special keys
+                keyName = keyName switch
+                {
+                    "ARROWUP" => "UP",
+                    "ARROWDOWN" => "DOWN",
+                    "ARROWLEFT" => "LEFT",
+                    "ARROWRIGHT" => "RIGHT",
+                    _ => keyName
+                };
+            }
+
+            var keyCode = GetKeyCode(keyName);
+
+            if (keyCode != 0)
+            {
+                hotkey = keyName;
+                currentHotkeyCode = keyCode;
+            }
+            else
+            {
+                hotkey = "F6";
+                currentHotkeyCode = 0x75;
+            }
+
+            StateHasChanged();
+        }
+    }
+
+    private int GetKeyCode(string keyName)
+    {
+        return keyName switch
+        {
+            "F1" => 0x70,
+            "F2" => 0x71,
+            "F3" => 0x72,
+            "F4" => 0x73,
+            "F5" => 0x74,
+            "F6" => 0x75,
+            "F7" => 0x76,
+            "F8" => 0x77,
+            "F9" => 0x78,
+            "F10" => 0x79,
+            "F11" => 0x7A,
+            "F12" => 0x7B,
+            "A" => 0x41,
+            "B" => 0x42,
+            "C" => 0x43,
+            "D" => 0x44,
+            "E" => 0x45,
+            "F" => 0x46,
+            "G" => 0x47,
+            "H" => 0x48,
+            "I" => 0x49,
+            "J" => 0x4A,
+            "K" => 0x4B,
+            "L" => 0x4C,
+            "M" => 0x4D,
+            "N" => 0x4E,
+            "O" => 0x4F,
+            "P" => 0x50,
+            "Q" => 0x51,
+            "R" => 0x52,
+            "S" => 0x53,
+            "T" => 0x54,
+            "U" => 0x55,
+            "V" => 0x56,
+            "W" => 0x57,
+            "X" => 0x58,
+            "Y" => 0x59,
+            "Z" => 0x5A,
+            "0" => 0x30,
+            "1" => 0x31,
+            "2" => 0x32,
+            "3" => 0x33,
+            "4" => 0x34,
+            "5" => 0x35,
+            "6" => 0x36,
+            "7" => 0x37,
+            "8" => 0x38,
+            "9" => 0x39,
+            "SPACE" => 0x20,
+            "ENTER" => 0x0D,
+            "ESCAPE" => 0x1B,
+            "TAB" => 0x09,
+            "SHIFT" => 0x10,
+            "CONTROL" => 0x11,
+            "ALT" => 0x12,
+            "UP" => 0x26,
+            "DOWN" => 0x28,
+            "LEFT" => 0x25,
+            "RIGHT" => 0x27,
+            "HOME" => 0x24,
+            "END" => 0x23,
+            "PAGEUP" => 0x21,
+            "PAGEDOWN" => 0x22,
+            "INSERT" => 0x2D,
+            "DELETE" => 0x2E,
+            _ => 0
+        };
+    }
+
+    private bool IsValidInterval()
+    {
+        return hours > 0 || minutes > 0 || seconds > 0 || milliseconds > 0;
+    }
+
+    private double GetTotalMilliseconds()
+    {
+        return (hours * 3600000) + (minutes * 60000) + (seconds * 1000) + milliseconds;
+    }
+
+    private string GetIntervalDisplay()
+    {
+        var parts = new List<string>();
+        if (hours > 0) parts.Add($"{hours}h");
+        if (minutes > 0) parts.Add($"{minutes}m");
+        if (seconds > 0) parts.Add($"{seconds}s");
+        if (milliseconds > 0) parts.Add($"{milliseconds}ms");
+        return parts.Count > 0 ? string.Join(" ", parts) : "0ms";
+    }
+
+    private double GetProgressPercentage()
+    {
+        if (repeatMode != RepeatMode.Count || repeatCount == 0) return 0;
+        return Math.Min(100, (double)clickCount / repeatCount * 100);
+    }
+
+    private string GetNextClickTime()
+    {
+        if (!isRunning || nextClickTime == null) return "N/A";
+        var remaining = nextClickTime.Value - DateTime.Now;
+        return remaining.TotalMilliseconds > 0 ? $"{remaining.TotalMilliseconds:F0}ms" : "Now";
+    }
+
+    private async Task ToggleClicking()
+    {
+        if (isRunning)
+        {
+            StopClicking();
+        }
+        else
+        {
+            await StartClicking();
+        }
+    }
+
+    private async Task StartClicking()
+    {
+        if (!IsValidInterval()) return;
+
+        isRunning = true;
+        clickCount = 0;
+
+        var interval = GetTotalMilliseconds();
+        clickTimer = new Timer(interval);
+        clickTimer.Elapsed += async (sender, e) => await PerformClick();
+        clickTimer.AutoReset = true;
+        clickTimer.Start();
+
+        nextClickTime = DateTime.Now.AddMilliseconds(interval);
+
+        await PerformClick();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void StopClicking()
+    {
+        isRunning = false;
+        nextClickTime = null;
+        clickTimer?.Stop();
+        clickTimer?.Dispose();
+        clickTimer = null;
+        StateHasChanged();
+    }
+
+    private async Task PerformClick()
+    {
+        if (!isRunning) return;
+
+        if (repeatMode == RepeatMode.Count && clickCount >= repeatCount)
+        {
+            await InvokeAsync(() =>
+            {
+                StopClicking();
+            });
+            return;
+        }
+
+        await InvokeAsync(async () =>
+        {
+            try
+            {
+                POINT currentPos = new POINT();
+                GetCursorPos(out currentPos);
+
+                if (positionMode == PositionMode.Fixed)
+                {
+                    SetCursorPos(fixedX, fixedY);
+                    await Task.Delay(10);
+                }
+
+                var (downFlag, upFlag) = GetMouseEventFlags();
+
+                mouse_event(downFlag, 0, 0, 0, 0);
+                await Task.Delay(50);
+                mouse_event(upFlag, 0, 0, 0, 0);
+
+                if (clickType == ClickType.Double)
+                {
+                    await Task.Delay(50);
+                    mouse_event(downFlag, 0, 0, 0, 0);
+                    await Task.Delay(50);
+                    mouse_event(upFlag, 0, 0, 0, 0);
+                }
+
+                if (positionMode == PositionMode.Fixed)
+                {
+                    SetCursorPos(currentPos.X, currentPos.Y);
+                }
+
+                clickCount++;
+
+                if (isRunning)
+                {
+                    nextClickTime = DateTime.Now.AddMilliseconds(GetTotalMilliseconds());
+                }
+
+                if (repeatMode == RepeatMode.Count && clickCount >= repeatCount)
+                {
+                    StopClicking();
+                }
+
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Click error: {ex.Message}");
+            }
+        });
+    }
+
+    private (uint downFlag, uint upFlag) GetMouseEventFlags()
+    {
+        return mouseButton switch
+        {
+            MouseButton.Left => (MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP),
+            MouseButton.Right => (MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP),
+            MouseButton.Middle => (MOUSEEVENTF_MIDDLEDOWN, MOUSEEVENTF_MIDDLEUP),
+            _ => (MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP)
+        };
+    }
+
+    private async Task StartPickLocation()
+    {
+        pickingLocation = true;
+        StateHasChanged();
+
+        await JSRuntime.InvokeVoidAsync("startLocationPicker", DotNetObjectReference.Create(this));
+    }
+
+    [JSInvokable]
+    public void SetPickedLocation(int x, int y)
+    {
+        fixedX = x;
+        fixedY = y;
+        pickingLocation = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void ResetStats()
+    {
+        clickCount = 0;
+        if (isRunning)
+        {
+            StopClicking();
+        }
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        StopClicking();
+        mouseTrackingTimer?.Stop();
+        mouseTrackingTimer?.Dispose();
+    }
+}
