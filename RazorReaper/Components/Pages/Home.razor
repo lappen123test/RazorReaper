@@ -1,6 +1,14 @@
 ﻿@page "/"
 @page "/home"
 @using RazorReaper.Components.Shared
+@using System.Net.Http
+@using System.Text.Json
+@using Microsoft.Extensions.Http
+@using System.Diagnostics
+@using System.Management
+@using System.Runtime.InteropServices
+@inject IHttpClientFactory HttpClientFactory
+@implements IDisposable
 
 <div class="app-container">
     <RazorReaper.Components.Shared.SharedNavbar/>
@@ -10,6 +18,134 @@
             <h1 class="page-title">RazorReaper Dashboard</h1>
             <p class="page-subtitle">ARK: Survival Evolved Configuration & Server Management Tool</p>
         </header>
+
+        <div class="dashboard-widgets">
+            <div class="content-card widget-card clock-widget">
+                <div class="widget-header">
+                    <svg fill="currentColor" viewBox="0 0 20 20" class="widget-icon">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                    </svg>
+                    <h3>Local Time</h3>
+                </div>
+                <div class="clock-display">
+                    <div class="clock-time">@currentTime.ToString("HH:mm:ss")</div>
+                    <div class="clock-date">@currentTime.ToString("dddd, MMMM dd, yyyy")</div>
+                </div>
+            </div>
+
+            <div class="content-card widget-card weather-widget">
+                <div class="widget-header">
+                    <svg fill="currentColor" viewBox="0 0 20 20" class="widget-icon">
+                        <path fill-rule="evenodd" d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z" clip-rule="evenodd" />
+                    </svg>
+                    <h3>Weather</h3>
+                </div>
+                @if (weatherLoading)
+                {
+                    <div class="weather-loading">
+                        <div class="spinner"></div>
+                        <p>Loading weather...</p>
+                    </div>
+                }
+                else if (weather != null)
+                {
+                    <div class="weather-display">
+                        <div class="weather-main">
+                            <div class="weather-temp">@weather.Temperature°C</div>
+                            <div class="weather-condition">@weather.Condition</div>
+                        </div>
+                        <div class="weather-details">
+                            <div class="weather-detail">
+                                <span>Feels like:</span>
+                                <span>@weather.FeelsLike°C</span>
+                            </div>
+                            <div class="weather-detail">
+                                <span>Location:</span>
+                                <span>@weather.City, @weather.Country</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="weather-error">
+                        <svg fill="currentColor" viewBox="0 0 20 20" class="error-icon">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                        <p>Unable to load weather</p>
+                        <p class="error-hint">Check your internet connection</p>
+                        <button class="btn-small btn-retry" @onclick="LoadWeatherData">
+                            <svg fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                            </svg>
+                            Retry
+                        </button>
+                    </div>
+                }
+            </div>
+
+            <div class="content-card widget-card stats-widget">
+                <div class="widget-header">
+                    <svg fill="currentColor" viewBox="0 0 20 20" class="widget-icon">
+                        <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                    </svg>
+                    <h3>Quick Stats</h3>
+                </div>
+                <div class="quick-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">@totalLifetimeClicks.ToString("N0")</div>
+                        <div class="stat-label">Total Clicks</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">@totalSessionTime</div>
+                        <div class="stat-label">Session Time</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">@configChanges</div>
+                        <div class="stat-label">Config Changes</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-card widget-card resource-widget">
+                <div class="widget-header">
+                    <svg fill="currentColor" viewBox="0 0 20 20" class="widget-icon">
+                        <path fill-rule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7H5V5h10v7H8.771z" clip-rule="evenodd" />
+                    </svg>
+                    <h3>System Resources</h3>
+                </div>
+                <div class="resource-stats">
+                    <div class="resource-item">
+                        <div class="resource-header">
+                            <span class="resource-label">CPU</span>
+                            <span class="resource-value">@cpuUsage%</span>
+                        </div>
+                        <div class="resource-bar">
+                            <div class="resource-fill cpu" style="width: @cpuUsage%"></div>
+                        </div>
+                    </div>
+                    <div class="resource-item">
+                        <div class="resource-header">
+                            <span class="resource-label">RAM</span>
+                            <span class="resource-value">@ramUsage%</span>
+                        </div>
+                        <div class="resource-bar">
+                            <div class="resource-fill ram" style="width: @ramUsage%"></div>
+                        </div>
+                    </div>
+                    <div class="resource-info">
+                        <div class="resource-detail">
+                            <span>Memory Used:</span>
+                            <span>@ramUsedGB GB / @ramTotalGB GB</span>
+                        </div>
+                        <div class="resource-detail">
+                            <span>Process:</span>
+                            <span>@processMemoryMB MB</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="content-card">
             <div class="system-status-header">
@@ -173,36 +309,51 @@
         </div>
 
         <div class="content-card activity-card">
-            <h3 class="activity-title">Recent Activity</h3>
+            <div class="activity-header">
+                <h3 class="activity-title">Recent Activity</h3>
+                <button class="btn-small" @onclick="ClearActivity">Clear All</button>
+            </div>
             <div class="activity-feed">
-                @foreach (var activity in recentActivities)
+                @if (recentActivities.Count == 0)
                 {
-                    <div class="activity-item @activity.Type">
-                        <div class="activity-icon">
-                            @if (activity.Type == "success")
-                            {
-                                <svg fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                </svg>
-                            }
-                            else if (activity.Type == "warning")
-                            {
-                                <svg fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                </svg>
-                            }
-                            else
-                            {
-                                <svg fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                                </svg>
-                            }
-                        </div>
-                        <div class="activity-content">
-                            <div class="activity-title">@activity.Title</div>
-                            <div class="activity-time">@activity.TimeAgo</div>
-                        </div>
+                    <div class="activity-empty">
+                        <svg fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                        <p>No recent activity</p>
                     </div>
+                }
+                else
+                {
+                    @foreach (var activity in recentActivities.Take(10))
+                    {
+                        <div class="activity-item @activity.Type">
+                            <div class="activity-icon">
+                                @if (activity.Type == "success")
+                                {
+                                    <svg fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                }
+                                else if (activity.Type == "warning")
+                                {
+                                    <svg fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                    </svg>
+                                }
+                                else
+                                {
+                                    <svg fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                    </svg>
+                                }
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">@activity.Title</div>
+                                <div class="activity-time">@activity.GetTimeAgo()</div>
+                            </div>
+                        </div>
+                    }
                 }
             </div>
         </div>
@@ -235,24 +386,293 @@
 
 @code {
     private SystemStatus systemStatus = new SystemStatus { IsHealthy = true };
+    private DateTime currentTime = DateTime.Now;
+    private System.Timers.Timer? clockTimer;
 
-    private List<ActivityItem> recentActivities = new List<ActivityItem>
+    private WeatherData? weather = null;
+    private bool weatherLoading = true;
+
+    private long totalLifetimeClicks = 0;
+    private string totalSessionTime = "0h 0m";
+    private int configChanges = 0;
+
+    private static List<ActivityItem> recentActivities = new List<ActivityItem>();
+
+    // System resources
+    private int cpuUsage = 0;
+    private int ramUsage = 0;
+    private double ramUsedGB = 0;
+    private double ramTotalGB = 0;
+    private double processMemoryMB = 0;
+    private System.Timers.Timer? resourceTimer;
+    private PerformanceCounter? cpuCounter;
+    private PerformanceCounter? ramCounter;
+
+    protected override async Task OnInitializedAsync()
     {
-        new ActivityItem { Title = "RazorReaper dashboard loaded", TimeAgo = "Just now", Type = "success" },
-        new ActivityItem { Title = "System status checked", TimeAgo = "1 minute ago", Type = "info" },
-        new ActivityItem { Title = "Configuration presets loaded", TimeAgo = "2 minutes ago", Type = "success" },
-        new ActivityItem { Title = "ARK installation verified", TimeAgo = "5 minutes ago", Type = "success" }
-    };
+        // Start clock timer
+        clockTimer = new System.Timers.Timer(1000);
+        clockTimer.Elapsed += (s, e) =>
+        {
+            currentTime = DateTime.Now;
+            InvokeAsync(StateHasChanged);
+        };
+        clockTimer.Start();
+
+        // Load weather data
+        await LoadWeatherData();
+
+        // Load statistics from storage
+        await LoadStatistics();
+
+        // Add initial activity
+        AddActivity("Dashboard loaded", "success");
+
+        // Start resource monitoring
+        StartResourceMonitoring();
+
+        await base.OnInitializedAsync();
+    }
+
+    [DllImport("kernel32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool GetPhysicallyInstalledSystemMemory(out long TotalMemoryInKilobytes);
+
+    private void StartResourceMonitoring()
+    {
+        try
+        {
+            // Initialize performance counters
+            cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+            ramCounter = new PerformanceCounter("Memory", "% Committed Bytes In Use");
+
+            // Get total RAM using WMI
+            GetPhysicallyInstalledSystemMemory(out long totalMemoryKB);
+            ramTotalGB = Math.Round(totalMemoryKB / 1024.0 / 1024.0, 2);
+
+            // First read to initialize counters
+            cpuCounter.NextValue();
+            ramCounter.NextValue();
+
+            // Start monitoring timer
+            resourceTimer = new System.Timers.Timer(2000); // Update every 2 seconds
+            resourceTimer.Elapsed += UpdateResources;
+            resourceTimer.Start();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Resource monitoring error: {ex.Message}");
+        }
+    }
+
+    private void UpdateResources(object? sender, System.Timers.ElapsedEventArgs e)
+    {
+        try
+        {
+            // Get CPU usage
+            cpuUsage = (int)Math.Round(cpuCounter?.NextValue() ?? 0);
+
+            // Get RAM usage
+            ramUsage = (int)Math.Round(ramCounter?.NextValue() ?? 0);
+
+            // Calculate used RAM
+            var totalMemory = (long)(ramTotalGB * 1024.0 * 1024.0 * 1024.0);
+            ramUsedGB = Math.Round((ramUsage / 100.0) * ramTotalGB, 2);
+
+            // Get current process memory
+            var process = Process.GetCurrentProcess();
+            processMemoryMB = Math.Round(process.WorkingSet64 / 1024.0 / 1024.0, 1);
+
+            InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Resource update error: {ex.Message}");
+        }
+    }
+
+    private async Task LoadWeatherData()
+    {
+        weatherLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var httpClient = HttpClientFactory.CreateClient();
+            httpClient.Timeout = TimeSpan.FromSeconds(15);
+
+            // First get IP location using ipapi.co (more reliable)
+            try
+            {
+                var ipResponse = await httpClient.GetStringAsync("https://ipapi.co/json/");
+                var ipData = JsonDocument.Parse(ipResponse);
+                var lat = ipData.RootElement.GetProperty("latitude").GetDouble();
+                var lon = ipData.RootElement.GetProperty("longitude").GetDouble();
+                var city = ipData.RootElement.GetProperty("city").GetString() ?? "Unknown";
+                var country = ipData.RootElement.GetProperty("country_name").GetString() ?? "Unknown";
+
+                Console.WriteLine($"Location: {city}, {country} ({lat}, {lon})");
+
+                // Get weather from Open-Meteo (free, no API key needed)
+                var weatherUrl = $"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,apparent_temperature,weather_code&temperature_unit=celsius";
+                var weatherResponse = await httpClient.GetStringAsync(weatherUrl);
+                var weatherData = JsonDocument.Parse(weatherResponse);
+
+                Console.WriteLine($"Weather data received: {weatherResponse.Substring(0, Math.Min(200, weatherResponse.Length))}");
+
+                var temp = weatherData.RootElement.GetProperty("current").GetProperty("temperature_2m").GetDouble();
+                var feelsLike = weatherData.RootElement.GetProperty("current").GetProperty("apparent_temperature").GetDouble();
+                var weatherCode = weatherData.RootElement.GetProperty("current").GetProperty("weather_code").GetInt32();
+
+                weather = new WeatherData
+                {
+                    Temperature = (int)Math.Round(temp),
+                    FeelsLike = (int)Math.Round(feelsLike),
+                    Condition = GetWeatherCondition(weatherCode),
+                    City = city,
+                    Country = country
+                };
+
+                Console.WriteLine($"Weather loaded successfully: {temp}°C, {GetWeatherCondition(weatherCode)}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Primary weather API failed: {ex.Message}, trying fallback...");
+
+                // Fallback: Use a simpler API
+                var fallbackResponse = await httpClient.GetStringAsync("https://ipinfo.io/json");
+                var fallbackData = JsonDocument.Parse(fallbackResponse);
+                var loc = fallbackData.RootElement.GetProperty("loc").GetString()?.Split(',');
+
+                if (loc != null && loc.Length == 2)
+                {
+                    var lat = double.Parse(loc[0]);
+                    var lon = double.Parse(loc[1]);
+                    var city = fallbackData.RootElement.GetProperty("city").GetString() ?? "Unknown";
+                    var country = fallbackData.RootElement.GetProperty("country").GetString() ?? "Unknown";
+
+                    var weatherUrl = $"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,apparent_temperature,weather_code&temperature_unit=celsius";
+                    var weatherResponse = await httpClient.GetStringAsync(weatherUrl);
+                    var weatherData = JsonDocument.Parse(weatherResponse);
+
+                    var temp = weatherData.RootElement.GetProperty("current").GetProperty("temperature_2m").GetDouble();
+                    var feelsLike = weatherData.RootElement.GetProperty("current").GetProperty("apparent_temperature").GetDouble();
+                    var weatherCode = weatherData.RootElement.GetProperty("current").GetProperty("weather_code").GetInt32();
+
+                    weather = new WeatherData
+                    {
+                        Temperature = (int)Math.Round(temp),
+                        FeelsLike = (int)Math.Round(feelsLike),
+                        Condition = GetWeatherCondition(weatherCode),
+                        City = city,
+                        Country = country
+                    };
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Weather error: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            weather = null;
+        }
+        finally
+        {
+            weatherLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetWeatherCondition(int code)
+    {
+        return code switch
+        {
+            0 => "Clear",
+            1 or 2 or 3 => "Partly Cloudy",
+            45 or 48 => "Foggy",
+            51 or 53 or 55 => "Drizzle",
+            61 or 63 or 65 => "Rain",
+            71 or 73 or 75 => "Snow",
+            80 or 81 or 82 => "Showers",
+            95 or 96 or 99 => "Thunderstorm",
+            _ => "Unknown"
+        };
+    }
+
+    private async Task LoadStatistics()
+    {
+        // TODO: Load from persistent storage (localStorage or file)
+        totalLifetimeClicks = 0; // Will implement storage later
+        totalSessionTime = "0h 0m";
+        configChanges = 0;
+    }
+
+    public static void AddActivity(string title, string type = "info")
+    {
+        recentActivities.Insert(0, new ActivityItem
+        {
+            Title = title,
+            Timestamp = DateTime.Now,
+            Type = type
+        });
+
+        // Keep only last 50 activities
+        if (recentActivities.Count > 50)
+        {
+            recentActivities.RemoveAt(recentActivities.Count - 1);
+        }
+    }
+
+    private void ClearActivity()
+    {
+        recentActivities.Clear();
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        clockTimer?.Stop();
+        clockTimer?.Dispose();
+        resourceTimer?.Stop();
+        resourceTimer?.Dispose();
+        cpuCounter?.Dispose();
+        ramCounter?.Dispose();
+    }
 
     public class SystemStatus
     {
         public bool IsHealthy { get; set; }
     }
 
+    public class WeatherData
+    {
+        public int Temperature { get; set; }
+        public int FeelsLike { get; set; }
+        public string Condition { get; set; } = "";
+        public string City { get; set; } = "";
+        public string Country { get; set; } = "";
+    }
+
     public class ActivityItem
     {
         public string Title { get; set; } = "";
-        public string TimeAgo { get; set; } = "";
+        public DateTime Timestamp { get; set; }
         public string Type { get; set; } = "info";
+
+        public string GetTimeAgo()
+        {
+            var span = DateTime.Now - Timestamp;
+
+            if (span.TotalSeconds < 60)
+                return "Just now";
+            if (span.TotalMinutes < 60)
+                return $"{(int)span.TotalMinutes}m ago";
+            if (span.TotalHours < 24)
+                return $"{(int)span.TotalHours}h ago";
+            if (span.TotalDays < 7)
+                return $"{(int)span.TotalDays}d ago";
+
+            return Timestamp.ToString("MMM dd");
+        }
     }
 }

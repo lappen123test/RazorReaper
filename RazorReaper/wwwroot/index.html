@@ -34,57 +34,54 @@
 
     <script>
         window.startLocationPicker = function (dotNetRef) {
-            const overlay = document.createElement('div');
-            overlay.style.position = 'fixed';
-            overlay.style.top = '0';
-            overlay.style.left = '0';
-            overlay.style.width = '100%';
-            overlay.style.height = '100%';
-            overlay.style.backgroundColor = 'rgba(255, 0, 0, 0.2)';
-            overlay.style.cursor = 'crosshair';
-            overlay.style.zIndex = '9999';
-            overlay.style.userSelect = 'none';
+            // Just notify C# to start picking - it will handle everything
+            dotNetRef.invokeMethodAsync('StartGlobalLocationPicker');
+        };
 
-            const instruction = document.createElement('div');
-            instruction.style.position = 'fixed';
-            instruction.style.top = '20px';
-            instruction.style.left = '50%';
-            instruction.style.transform = 'translateX(-50%)';
-            instruction.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-            instruction.style.color = 'white';
-            instruction.style.padding = '10px 20px';
-            instruction.style.borderRadius = '5px';
-            instruction.style.zIndex = '10000';
-            instruction.style.fontFamily = 'Arial, sans-serif';
-            instruction.textContent = 'Click anywhere to select position (ESC to cancel)';
+        window.renderHeatmap = function (clickData) {
+            const canvas = document.getElementById('heatmapCanvas');
+            if (!canvas) return;
 
-            document.body.appendChild(overlay);
-            document.body.appendChild(instruction);
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            const cleanup = () => {
-                document.body.removeChild(overlay);
-                document.body.removeChild(instruction);
-                document.removeEventListener('keydown', keyHandler);
-            };
+            // Count clicks per position
+            const clickMap = {};
+            clickData.forEach(click => {
+                const key = `${click.x},${click.y}`;
+                clickMap[key] = (clickMap[key] || 0) + 1;
+            });
 
-            const keyHandler = (e) => {
-                if (e.key === 'Escape') {
-                    cleanup();
+            // Find max clicks
+            const maxClicks = Math.max(...Object.values(clickMap));
+
+            // Draw heatmap
+            Object.entries(clickMap).forEach(([key, count]) => {
+                const [x, y] = key.split(',').map(Number);
+                const intensity = count / maxClicks;
+
+                // Scale coordinates to canvas
+                const canvasX = (x / screen.width) * canvas.width;
+                const canvasY = (y / screen.height) * canvas.height;
+
+                // Color from blue (cold) to red (hot)
+                const r = Math.floor(255 * intensity);
+                const g = Math.floor(255 * (1 - intensity) * 0.5);
+                const b = Math.floor(255 * (1 - intensity));
+                const alpha = 0.3 + (intensity * 0.7);
+
+                ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(canvasX, canvasY, 20, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Add glow effect for hot spots
+                if (intensity > 0.7) {
+                    ctx.fillStyle = `rgba(255, 255, 0, ${intensity * 0.3})`;
+                    ctx.beginPath();
+                    ctx.arc(canvasX, canvasY, 30, 0, Math.PI * 2);
+                    ctx.fill();
                 }
-            };
-
-            document.addEventListener('keydown', keyHandler);
-
-            overlay.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-
-                const x = e.clientX;
-                const y = e.clientY;
-
-                cleanup();
-
-                dotNetRef.invokeMethodAsync('SetPickedLocation', x, y);
             });
         };
     </script>

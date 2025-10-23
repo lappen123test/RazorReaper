@@ -15,13 +15,17 @@
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     padding: 2rem !important;
     border-radius: 16px !important;
+    animation: fadeInUp 0.6s ease-out !important;
 }
 
     .server-connection-panel h3 {
-        color: var(--text-primary) !important;
+        background: var(--gradient-purple) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
         margin-bottom: 1.5rem !important;
         font-size: 1.25rem !important;
-        font-weight: 600 !important;
+        font-weight: 700 !important;
     }
 
 .main-column {
@@ -35,7 +39,15 @@
     background: rgba(0, 0, 0, 0.15) !important;
     backdrop-filter: blur(10px) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    animation: fadeInUp 0.6s ease-out !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
+
+    .content-card:hover {
+        border-color: rgba(139, 92, 246, 0.3) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+    }
 
 .connection-form {
     display: flex !important;
@@ -160,35 +172,24 @@
         transform: scale(1.1) !important;
     }
 
-    .server-btn.query:not(:disabled) {
-        background: rgba(255, 255, 255, 0.1) !important;
-        border-color: rgba(255, 255, 255, 0.3) !important;
-        color: var(--text-primary) !important;
-    }
-
-    .server-btn.connect:not(:disabled) {
-        background: rgba(255, 255, 255, 0.1) !important;
-        border-color: rgba(255, 255, 255, 0.3) !important;
-        color: var(--text-primary) !important;
-    }
-
-    .server-btn.save:not(:disabled) {
-        background: rgba(255, 255, 255, 0.1) !important;
-        border-color: rgba(255, 255, 255, 0.3) !important;
-        color: var(--text-primary) !important;
-    }
-
-    .server-btn.favorite:not(:disabled) {
-        background: rgba(255, 255, 255, 0.1) !important;
-        border-color: rgba(255, 255, 255, 0.3) !important;
-        color: var(--text-primary) !important;
-    }
-
+    .server-btn.query:not(:disabled),
+    .server-btn.connect:not(:disabled),
+    .server-btn.save:not(:disabled),
+    .server-btn.favorite:not(:disabled),
     .server-btn.browser:not(:disabled) {
-        background: rgba(255, 255, 255, 0.1) !important;
-        border-color: rgba(255, 255, 255, 0.3) !important;
-        color: var(--text-primary) !important;
+        background: var(--gradient-purple) !important;
+        border-color: rgba(139, 92, 246, 0.5) !important;
+        color: white !important;
+        box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3) !important;
     }
+
+        .server-btn.query:not(:disabled):hover,
+        .server-btn.connect:not(:disabled):hover,
+        .server-btn.save:not(:disabled):hover,
+        .server-btn.favorite:not(:disabled):hover,
+        .server-btn.browser:not(:disabled):hover {
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5) !important;
+        }
 
 .copy-btn {
     min-width: 48px !important;
@@ -325,8 +326,11 @@
 }
 
     .section-header h3 {
-        color: var(--text-primary);
-        font-weight: 600;
+        background: var(--gradient-purple);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700;
         font-size: 1.25rem;
         margin: 0;
     }
@@ -510,6 +514,17 @@
 
     100% {
         transform: rotate(360deg);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 

@@ -2,7 +2,15 @@
     background: rgba(0, 0, 0, 0.15) !important;
     backdrop-filter: blur(10px) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    animation: fadeInUp 0.6s ease-out !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
+
+    .game-page-container .content-card:hover {
+        border-color: rgba(139, 92, 246, 0.3) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+    }
 
 .game-page-container .game-status {
     display: flex;
@@ -81,8 +89,11 @@
 
     .game-page-container .status-info h3 {
         font-size: 1.5rem;
-        font-weight: 600;
-        color: var(--text-primary);
+        font-weight: 700;
+        background: var(--gradient-purple);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         margin: 0 0 0.5rem 0;
         white-space: nowrap;
     }
@@ -144,63 +155,24 @@
         transform: none !important;
     }
 
-    .game-page-container .game-btn.primary {
-        border-color: rgba(255, 255, 255, 0.3);
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-    }
-
-        .game-page-container .game-btn.primary:hover:not(:disabled) {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
-            border-color: rgba(255, 255, 255, 0.5);
-            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2);
-        }
-
-    .game-page-container .game-btn.success {
-        border-color: rgba(16, 185, 129, 0.3);
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
-    }
-
-        .game-page-container .game-btn.success:hover:not(:disabled) {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1));
-            border-color: var(--accent-green);
-            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
-            color: var(--accent-green);
-        }
-
-    .game-page-container .game-btn.warning {
-        border-color: rgba(245, 158, 11, 0.3);
-        background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
-    }
-
-        .game-page-container .game-btn.warning:hover:not(:disabled) {
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.1));
-            border-color: var(--accent-orange);
-            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
-            color: var(--accent-orange);
-        }
-
-    .game-page-container .game-btn.danger {
-        border-color: rgba(239, 68, 68, 0.3);
-        background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
-    }
-
-        .game-page-container .game-btn.danger:hover:not(:disabled) {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1));
-            border-color: var(--accent-red);
-            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
-            color: var(--accent-red);
-        }
-
+    .game-page-container .game-btn.primary,
+    .game-page-container .game-btn.success,
+    .game-page-container .game-btn.warning,
+    .game-page-container .game-btn.danger,
     .game-page-container .game-btn.info {
-        border-color: rgba(59, 130, 246, 0.3);
-        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+        border-color: rgba(139, 92, 246, 0.3);
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.08));
     }
 
+        .game-page-container .game-btn.primary:hover:not(:disabled),
+        .game-page-container .game-btn.success:hover:not(:disabled),
+        .game-page-container .game-btn.warning:hover:not(:disabled),
+        .game-page-container .game-btn.danger:hover:not(:disabled),
         .game-page-container .game-btn.info:hover:not(:disabled) {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.1));
-            border-color: var(--accent-blue);
-            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
-            color: var(--accent-blue);
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(139, 92, 246, 0.15));
+            border-color: var(--accent-purple);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+            color: var(--accent-purple-light);
         }
 
     .game-page-container .game-btn svg {
@@ -212,3 +184,14 @@
     .game-page-container .game-btn:hover:not(:disabled) svg {
         transform: scale(1.1);
     }
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

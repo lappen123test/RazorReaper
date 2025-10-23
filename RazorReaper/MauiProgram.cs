@@ -15,6 +15,7 @@ namespace RazorReaper
                 });
 
             builder.Services.AddMauiBlazorWebView();
+            builder.Services.AddHttpClient();
 
 #if DEBUG
     		builder.Services.AddBlazorWebViewDeveloperTools();

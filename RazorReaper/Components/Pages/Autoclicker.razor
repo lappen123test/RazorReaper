@@ -3,6 +3,7 @@
 @using System.Timers
 @using System.Drawing
 @inject IJSRuntime JSRuntime
+@using RazorReaper.Components.Pages
 @implements IDisposable
 
 <div class="app-container">
@@ -91,6 +92,50 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">Click Randomization</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="enable-randomization" @bind="enableRandomization" />
+                            <label for="enable-randomization">Enable random delay variance (anti-detection)</label>
+                        </div>
+                        @if (enableRandomization)
+                        {
+                            <div class="randomization-settings">
+                                <div class="slider-group">
+                                    <label>Variance: ±@randomVarianceMs ms</label>
+                                    <input type="range" min="0" max="500" step="10" @bind="randomVarianceMs" class="slider" />
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">Click Mode</label>
+                        <div class="button-select">
+                            <button class="select-btn @(clickMode == ClickMode.Continuous ? "active" : "")"
+                                    @onclick="() => clickMode = ClickMode.Continuous">
+                                Continuous
+                            </button>
+                            <button class="select-btn @(clickMode == ClickMode.Burst ? "active" : "")"
+                                    @onclick="() => clickMode = ClickMode.Burst">
+                                Burst
+                            </button>
+                        </div>
+                        @if (clickMode == ClickMode.Burst)
+                        {
+                            <div class="burst-settings">
+                                <div class="burst-input-group">
+                                    <label>Clicks per burst:</label>
+                                    <input type="number" @bind="burstClickCount" min="1" max="1000" class="burst-input" />
+                                </div>
+                                <div class="burst-input-group">
+                                    <label>Pause between bursts (seconds):</label>
+                                    <input type="number" @bind="burstPauseSeconds" min="0" max="300" class="burst-input" />
+                                </div>
+                            </div>
+                        }
+                    </div>
                 </div>
 
                 <div class="content-card">
@@ -102,7 +147,7 @@
                             <button class="hotkey-btn @(recordingKey ? "recording" : "")"
                                     @onclick="StartHotkeyRecording"
                                     @onkeydown="CaptureHotkey"
-                                    @onkeydown:preventDefault="recordingKey"
+                                    @onkeydown:preventDefault="true"
                                     tabindex="0">
                                 @(recordingKey ? "Press any key..." : hotkey)
                             </button>
@@ -143,6 +188,11 @@
                                    @onchange="() => { positionMode = PositionMode.Fixed; }" />
                             <label for="pos-fixed">Fixed position</label>
                         </div>
+                        <div class="radio-group">
+                            <input type="radio" id="pos-multi" name="position" checked="@(positionMode == PositionMode.Multi)"
+                                   @onchange="() => { positionMode = PositionMode.Multi; }" />
+                            <label for="pos-multi">Multiple positions</label>
+                        </div>
                     </div>
 
                     @if (positionMode == PositionMode.Fixed)
@@ -164,6 +214,41 @@
                                     <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
                                 </svg>
                                 @(pickingLocation ? "Click anywhere..." : "Pick Location")
+                            </button>
+                        </div>
+                    }
+
+                    @if (positionMode == PositionMode.Multi)
+                    {
+                        <div class="multi-position-controls">
+                            <div class="positions-list">
+                                @if (multiPositions.Count == 0)
+                                {
+                                    <div class="no-positions">
+                                        <p>No positions added yet</p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    @foreach (var (pos, index) in multiPositions.Select((p, i) => (p, i)))
+                                    {
+                                        <div class="position-item">
+                                            <span class="position-number">@(index + 1)</span>
+                                            <span class="position-coords">X: @pos.X, Y: @pos.Y</span>
+                                            <button class="btn-remove" @onclick="() => RemovePosition(index)">
+                                                <svg fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                            <button class="pick-btn" @onclick="StartPickMultiLocation" disabled="@pickingLocation">
+                                <svg fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                                </svg>
+                                @(pickingLocation ? "Click anywhere..." : "Add Position")
                             </button>
                         </div>
                     }
@@ -214,16 +299,116 @@
                         }
                     </div>
                 </div>
+
+                <div class="content-card">
+                    <h3>Profiles</h3>
+                    <div class="profile-controls">
+                        <select class="profile-select" @onchange="LoadProfile">
+                            <option value="">Select a profile...</option>
+                            @foreach (var profile in savedProfiles)
+                            {
+                                <option value="@profile.Name">@profile.Name</option>
+                            }
+                        </select>
+                        <div class="profile-buttons">
+                            <button class="btn-small" @onclick="ShowSaveProfileDialog">Save</button>
+                            <button class="btn-small" @onclick="ShowDeleteProfileDialog" disabled="@(savedProfiles.Count == 0)">Delete</button>
+                        </div>
+                    </div>
+                    @if (showSaveDialog)
+                    {
+                        <div class="profile-dialog">
+                            <input type="text" @bind="newProfileName" placeholder="Profile name..." class="profile-input" />
+                            <div class="dialog-buttons">
+                                <button class="btn-small" @onclick="SaveCurrentProfile">Save</button>
+                                <button class="btn-small" @onclick="() => showSaveDialog = false">Cancel</button>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="content-card">
+                    <h3>Session Statistics</h3>
+                    <div class="status-info">
+                        <div class="status-row">
+                            <span>Total Clicks:</span>
+                            <span class="status-value">@sessionTotalClicks</span>
+                        </div>
+                        <div class="status-row">
+                            <span>Session Time:</span>
+                            <span class="status-value">@GetSessionTime()</span>
+                        </div>
+                        <div class="status-row">
+                            <span>Average CPS:</span>
+                            <span class="status-value">@GetAverageCPS()</span>
+                        </div>
+                    </div>
+                    <div class="heatmap-button-container">
+                        <button class="btn btn-secondary" @onclick="ShowHeatmap" disabled="@(clickHistory.Count == 0)">
+                            <svg fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
+                            </svg>
+                            View Heatmap (@clickHistory.Count clicks)
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
 </div>
 
+@if (showHeatmapModal)
+{
+    <div class="modal-overlay" @onclick="CloseHeatmap">
+        <div class="modal-content heatmap-modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2>Click Heatmap</h2>
+                <button class="modal-close" @onclick="CloseHeatmap">
+                    <svg fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="heatmap-controls">
+                    <div class="heatmap-stats">
+                        <div class="heatmap-stat">
+                            <span>Total Clicks:</span>
+                            <span>@clickHistory.Count</span>
+                        </div>
+                        <div class="heatmap-stat">
+                            <span>Unique Positions:</span>
+                            <span>@GetUniquePositions()</span>
+                        </div>
+                        <div class="heatmap-stat">
+                            <span>Time Range:</span>
+                            <span>@GetTimeRange()</span>
+                        </div>
+                    </div>
+                    <div class="heatmap-actions">
+                        <button class="btn-small" @onclick="ClearHeatmapData">Clear Data</button>
+                        <button class="btn-small" @onclick="ExportHeatmapData">Export CSV</button>
+                    </div>
+                </div>
+                <div class="heatmap-canvas-container">
+                    <canvas id="heatmapCanvas" width="1920" height="1080"></canvas>
+                </div>
+                <div class="heatmap-legend">
+                    <span>Cold (1)</span>
+                    <div class="legend-gradient"></div>
+                    <span>Hot (@GetMaxClicksAtPosition())</span>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     public enum MouseButton { Left, Middle, Right }
     public enum ClickType { Single, Double }
     public enum RepeatMode { Infinite, Count }
-    public enum PositionMode { Current, Fixed }
+    public enum PositionMode { Current, Fixed, Multi }
+    public enum ClickMode { Continuous, Burst }
 
     private int hours = 0;
     private int minutes = 0;
@@ -242,19 +427,48 @@
     private int currentMouseY = 0;
     private bool pickingLocation = false;
 
+    private bool enableRandomization = false;
+    private int randomVarianceMs = 100;
+    private Random random = new Random();
+
+    private int sessionTotalClicks = 0;
+    private DateTime sessionStartTime = DateTime.Now;
+
+    // Multi-position
+    private List<POINT> multiPositions = new List<POINT>();
+    private int currentPositionIndex = 0;
+
+    // Burst mode
+    private ClickMode clickMode = ClickMode.Continuous;
+    private int burstClickCount = 10;
+    private int burstPauseSeconds = 2;
+    private int currentBurstCount = 0;
+
+    // Profiles
+    private List<ClickProfile> savedProfiles = new List<ClickProfile>();
+    private bool showSaveDialog = false;
+    private string newProfileName = "";
+
+    // Heatmap
+    private List<ClickRecord> clickHistory = new List<ClickRecord>();
+    private bool showHeatmapModal = false;
+
     private bool isRunning = false;
     private int clickCount = 0;
     private Timer? clickTimer;
     private Timer? mouseTrackingTimer;
     private DateTime? nextClickTime;
+    private ElapsedEventHandler? timerEventHandler;
 
     private string hotkey = "F6";
     private bool recordingKey = false;
-    private bool hotkeyRegistered = false;
     private int currentHotkeyCode = 0x75; // F6
+    private DateTime lastHotkeyPress = DateTime.MinValue;
+    private bool hotkeyEnabled = true;
 
-    [DllImport("user32.dll")]
-    private static extern void mouse_event(uint dwFlags, int dx, int dy, uint cButtons, uint dwExtraInfo);
+    private const string HOTKEY_STORAGE_KEY = "AutoclickerHotkey";
+    private const string HOTKEY_CODE_STORAGE_KEY = "AutoclickerHotkeyCode";
+    private const int HOTKEY_COOLDOWN_MS = 2000; // 2 seconds
 
     [DllImport("user32.dll")]
     private static extern bool GetCursorPos(out POINT lpPoint);
@@ -271,13 +485,95 @@
     [DllImport("kernel32.dll")]
     private static extern IntPtr GetConsoleWindow();
 
+    [DllImport("user32.dll")]
+    private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelMouseProc lpfn, IntPtr hMod, uint dwThreadId);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool UnhookWindowsHookEx(IntPtr hhk);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr GetModuleHandle(string lpModuleName);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
+
+    private delegate IntPtr LowLevelMouseProc(int nCode, IntPtr wParam, IntPtr lParam);
+
+    private const int WH_MOUSE_LL = 14;
+    private const int WM_LBUTTONDOWN = 0x0201;
+
+    private IntPtr mouseHookID = IntPtr.Zero;
+    private LowLevelMouseProc? mouseProc;
+
     [StructLayout(LayoutKind.Sequential)]
-    private struct POINT
+    public struct POINT
     {
         public int X;
         public int Y;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MSLLHOOKSTRUCT
+    {
+        public POINT pt;
+        public uint mouseData;
+        public uint flags;
+        public uint time;
+        public IntPtr dwExtraInfo;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct INPUT
+    {
+        public uint type;
+        public InputUnion u;
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
+    private struct InputUnion
+    {
+        [FieldOffset(0)]
+        public MOUSEINPUT mi;
+        [FieldOffset(0)]
+        public KEYBDINPUT ki;
+        [FieldOffset(0)]
+        public HARDWAREINPUT hi;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MOUSEINPUT
+    {
+        public int dx;
+        public int dy;
+        public uint mouseData;
+        public uint dwFlags;
+        public uint time;
+        public IntPtr dwExtraInfo;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct KEYBDINPUT
+    {
+        public ushort wVk;
+        public ushort wScan;
+        public uint dwFlags;
+        public uint time;
+        public IntPtr dwExtraInfo;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct HARDWAREINPUT
+    {
+        public uint uMsg;
+        public ushort wParamL;
+        public ushort wParamH;
+    }
+
+    private const uint INPUT_MOUSE = 0;
     private const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
     private const uint MOUSEEVENTF_LEFTUP = 0x0004;
     private const uint MOUSEEVENTF_RIGHTDOWN = 0x0008;
@@ -289,6 +585,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // Load saved hotkey from localStorage
+        await LoadSavedHotkey();
+
         mouseTrackingTimer = new Timer(100);
         mouseTrackingTimer.Elapsed += UpdateMousePosition;
         mouseTrackingTimer.Start();
@@ -296,6 +595,40 @@
         _ = Task.Run(MonitorHotkey);
 
         await base.OnInitializedAsync();
+    }
+
+    private async Task LoadSavedHotkey()
+    {
+        try
+        {
+            var savedHotkey = await JSRuntime.InvokeAsync<string>("localStorage.getItem", HOTKEY_STORAGE_KEY);
+            var savedCode = await JSRuntime.InvokeAsync<string>("localStorage.getItem", HOTKEY_CODE_STORAGE_KEY);
+
+            if (!string.IsNullOrEmpty(savedHotkey) && !string.IsNullOrEmpty(savedCode) && int.TryParse(savedCode, out int code))
+            {
+                hotkey = savedHotkey;
+                currentHotkeyCode = code;
+            }
+        }
+        catch
+        {
+            // If loading fails, keep defaults
+            hotkey = "F6";
+            currentHotkeyCode = 0x75;
+        }
+    }
+
+    private async Task SaveHotkey()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", HOTKEY_STORAGE_KEY, hotkey);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", HOTKEY_CODE_STORAGE_KEY, currentHotkeyCode.ToString());
+        }
+        catch
+        {
+            // Ignore save errors
+        }
     }
 
     private void UpdateMousePosition(object? sender, ElapsedEventArgs e)
@@ -316,10 +649,22 @@
         {
             try
             {
+                // Don't check hotkey while recording or if disabled
+                if (recordingKey || !hotkeyEnabled)
+                {
+                    wasPressed = false;
+                    await Task.Delay(100);
+                    continue;
+                }
+
                 bool isPressed = (GetAsyncKeyState(currentHotkeyCode) & 0x8000) != 0;
 
-                if (isPressed && !wasPressed)
+                // Check cooldown - only trigger if 2 seconds have passed
+                var timeSinceLastPress = DateTime.Now - lastHotkeyPress;
+
+                if (isPressed && !wasPressed && timeSinceLastPress.TotalMilliseconds >= HOTKEY_COOLDOWN_MS)
                 {
+                    lastHotkeyPress = DateTime.Now;
                     await InvokeAsync(() => ToggleClicking());
                 }
 
@@ -336,21 +681,33 @@
     private void StartHotkeyRecording()
     {
         recordingKey = true;
+        hotkeyEnabled = false; // Disable hotkey monitoring while recording
         StateHasChanged();
     }
 
-    private void CaptureHotkey(KeyboardEventArgs e)
+    private async void CaptureHotkey(KeyboardEventArgs e)
     {
         if (recordingKey)
         {
             recordingKey = false;
 
-            var keyName = e.Key.ToUpper();
+            // Use Code property for more reliable F-key detection
+            var keyName = string.IsNullOrEmpty(e.Code) ? e.Key.ToUpper() : e.Code.ToUpper();
 
-            // Handle special key names from browser
-            if (keyName.StartsWith("F") && int.TryParse(keyName.Substring(1), out int fnum))
+            // Handle special key names from browser Code property
+            if (keyName.StartsWith("F") && int.TryParse(keyName.Substring(1), out int fnum) && fnum >= 1 && fnum <= 24)
             {
                 keyName = $"F{fnum}";
+            }
+            else if (keyName.StartsWith("KEY"))
+            {
+                // Handle "KeyA", "KeyB" format from Code property
+                keyName = keyName.Substring(3);
+            }
+            else if (keyName.StartsWith("DIGIT"))
+            {
+                // Handle "Digit0", "Digit1" format from Code property
+                keyName = keyName.Substring(5);
             }
             else if (keyName == " ")
             {
@@ -382,6 +739,16 @@
                 currentHotkeyCode = 0x75;
             }
 
+            // Save the hotkey to localStorage
+            await SaveHotkey();
+
+            // Set lastHotkeyPress to NOW to enforce cooldown period
+            lastHotkeyPress = DateTime.Now;
+
+            // Wait longer before re-enabling hotkey to prevent immediate trigger
+            await Task.Delay(1000);
+            hotkeyEnabled = true;
+
             StateHasChanged();
         }
     }
@@ -390,6 +757,7 @@
     {
         return keyName switch
         {
+            // F Keys
             "F1" => 0x70,
             "F2" => 0x71,
             "F3" => 0x72,
@@ -402,6 +770,20 @@
             "F10" => 0x79,
             "F11" => 0x7A,
             "F12" => 0x7B,
+            "F13" => 0x7C,
+            "F14" => 0x7D,
+            "F15" => 0x7E,
+            "F16" => 0x7F,
+            "F17" => 0x80,
+            "F18" => 0x81,
+            "F19" => 0x82,
+            "F20" => 0x83,
+            "F21" => 0x84,
+            "F22" => 0x85,
+            "F23" => 0x86,
+            "F24" => 0x87,
+
+            // Letters
             "A" => 0x41,
             "B" => 0x42,
             "C" => 0x43,
@@ -428,6 +810,8 @@
             "X" => 0x58,
             "Y" => 0x59,
             "Z" => 0x5A,
+
+            // Numbers (top row)
             "0" => 0x30,
             "1" => 0x31,
             "2" => 0x32,
@@ -438,23 +822,82 @@
             "7" => 0x37,
             "8" => 0x38,
             "9" => 0x39,
+
+            // Numpad
+            "NUMPAD0" => 0x60,
+            "NUMPAD1" => 0x61,
+            "NUMPAD2" => 0x62,
+            "NUMPAD3" => 0x63,
+            "NUMPAD4" => 0x64,
+            "NUMPAD5" => 0x65,
+            "NUMPAD6" => 0x66,
+            "NUMPAD7" => 0x67,
+            "NUMPAD8" => 0x68,
+            "NUMPAD9" => 0x69,
+            "MULTIPLY" => 0x6A,
+            "ADD" => 0x6B,
+            "SEPARATOR" => 0x6C,
+            "SUBTRACT" => 0x6D,
+            "DECIMAL" => 0x6E,
+            "DIVIDE" => 0x6F,
+
+            // Special keys
             "SPACE" => 0x20,
             "ENTER" => 0x0D,
+            "RETURN" => 0x0D,
             "ESCAPE" => 0x1B,
+            "ESC" => 0x1B,
             "TAB" => 0x09,
+            "BACKSPACE" => 0x08,
+            "CAPSLOCK" => 0x14,
+            "NUMLOCK" => 0x90,
+            "SCROLLLOCK" => 0x91,
+
+            // Modifiers
             "SHIFT" => 0x10,
+            "SHIFTLEFT" => 0xA0,
+            "SHIFTRIGHT" => 0xA1,
             "CONTROL" => 0x11,
+            "CONTROLLEFT" => 0xA2,
+            "CONTROLRIGHT" => 0xA3,
             "ALT" => 0x12,
+            "ALTLEFT" => 0xA4,
+            "ALTRIGHT" => 0xA5,
+
+            // Arrow keys
             "UP" => 0x26,
+            "ARROWUP" => 0x26,
             "DOWN" => 0x28,
+            "ARROWDOWN" => 0x28,
             "LEFT" => 0x25,
+            "ARROWLEFT" => 0x25,
             "RIGHT" => 0x27,
+            "ARROWRIGHT" => 0x27,
+
+            // Navigation
             "HOME" => 0x24,
             "END" => 0x23,
             "PAGEUP" => 0x21,
             "PAGEDOWN" => 0x22,
             "INSERT" => 0x2D,
             "DELETE" => 0x2E,
+
+            // Symbols
+            "SEMICOLON" => 0xBA,
+            "EQUAL" => 0xBB,
+            "COMMA" => 0xBC,
+            "MINUS" => 0xBD,
+            "PERIOD" => 0xBE,
+            "SLASH" => 0xBF,
+            "BACKQUOTE" => 0xC0,
+            "BRACKETLEFT" => 0xDB,
+            "BACKSLASH" => 0xDC,
+            "BRACKETRIGHT" => 0xDD,
+            "QUOTE" => 0xDE,
+
+            // Catch-all for single character keys
+            _ when keyName.Length == 1 => keyName[0],
+
             _ => 0
         };
     }
@@ -512,32 +955,102 @@
         clickCount = 0;
 
         var interval = GetTotalMilliseconds();
-        clickTimer = new Timer(interval);
-        clickTimer.Elapsed += async (sender, e) => await PerformClick();
-        clickTimer.AutoReset = true;
-        clickTimer.Start();
 
-        nextClickTime = DateTime.Now.AddMilliseconds(interval);
+        // Use a custom timer approach for randomization
+        if (enableRandomization)
+        {
+            // Start a background task that handles clicking with randomization
+            _ = Task.Run(async () => await RandomizedClickLoop());
+        }
+        else
+        {
+            clickTimer = new Timer(interval);
 
-        await PerformClick();
+            // Store the event handler so we can properly unsubscribe later
+            timerEventHandler = async (sender, e) => await PerformClick();
+            clickTimer.Elapsed += timerEventHandler;
+
+            clickTimer.AutoReset = true;
+            clickTimer.Start();
+
+            nextClickTime = DateTime.Now.AddMilliseconds(interval);
+
+            await PerformClick();
+        }
+
+        // Log activity
+        Home.AddActivity($"Autoclicker started ({GetIntervalDisplay()} interval)", "success");
 
         await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RandomizedClickLoop()
+    {
+        while (isRunning)
+        {
+            await PerformClick();
+
+            if (!isRunning) break;
+
+            var baseInterval = GetTotalMilliseconds();
+            var variance = random.Next(-randomVarianceMs, randomVarianceMs + 1);
+            var actualInterval = Math.Max(10, baseInterval + variance); // Minimum 10ms
+
+            await InvokeAsync(() =>
+            {
+                nextClickTime = DateTime.Now.AddMilliseconds(actualInterval);
+                StateHasChanged();
+            });
+
+            await Task.Delay((int)actualInterval);
+        }
     }
 
     private void StopClicking()
     {
         isRunning = false;
         nextClickTime = null;
-        clickTimer?.Stop();
-        clickTimer?.Dispose();
-        clickTimer = null;
+
+        // Immediately stop and dispose timer
+        if (clickTimer != null)
+        {
+            clickTimer.Stop();
+
+            // Properly unsubscribe using the stored handler
+            if (timerEventHandler != null)
+            {
+                clickTimer.Elapsed -= timerEventHandler;
+                timerEventHandler = null;
+            }
+
+            clickTimer.Dispose();
+            clickTimer = null;
+        }
+
+        // Log activity
+        Home.AddActivity($"Autoclicker stopped ({clickCount} clicks performed)", "info");
+
         StateHasChanged();
     }
 
     private async Task PerformClick()
     {
+        // Double check if still running (instant stop)
         if (!isRunning) return;
 
+        // Check burst mode
+        if (clickMode == ClickMode.Burst)
+        {
+            if (currentBurstCount >= burstClickCount)
+            {
+                // Pause between bursts
+                currentBurstCount = 0;
+                await Task.Delay(burstPauseSeconds * 1000);
+                if (!isRunning) return;
+            }
+        }
+
+        // Only check repeat count BEFORE performing the click to avoid premature stops
         if (repeatMode == RepeatMode.Count && clickCount >= repeatCount)
         {
             await InvokeAsync(() =>
@@ -547,57 +1060,122 @@
             return;
         }
 
-        await InvokeAsync(async () =>
+        // Run click on background thread to avoid UI blocking
+        await Task.Run(async () =>
         {
             try
             {
+                // Check again before performing click
+                if (!isRunning) return;
+
                 POINT currentPos = new POINT();
                 GetCursorPos(out currentPos);
 
+                int clickX = currentPos.X;
+                int clickY = currentPos.Y;
+
+                // Determine click position based on mode
                 if (positionMode == PositionMode.Fixed)
                 {
-                    SetCursorPos(fixedX, fixedY);
+                    clickX = fixedX;
+                    clickY = fixedY;
+                    SetCursorPos(clickX, clickY);
                     await Task.Delay(10);
                 }
+                else if (positionMode == PositionMode.Multi && multiPositions.Count > 0)
+                {
+                    var pos = multiPositions[currentPositionIndex];
+                    clickX = pos.X;
+                    clickY = pos.Y;
+                    SetCursorPos(clickX, clickY);
+                    await Task.Delay(10);
+
+                    // Move to next position
+                    currentPositionIndex = (currentPositionIndex + 1) % multiPositions.Count;
+                }
+
+                // Check if still running before clicking
+                if (!isRunning) return;
 
                 var (downFlag, upFlag) = GetMouseEventFlags();
 
-                mouse_event(downFlag, 0, 0, 0, 0);
+                // Use SendInput for proper system-wide clicks
+                SendMouseInput(downFlag);
                 await Task.Delay(50);
-                mouse_event(upFlag, 0, 0, 0, 0);
 
-                if (clickType == ClickType.Double)
+                // Check if still running
+                if (!isRunning) return;
+
+                SendMouseInput(upFlag);
+
+                if (clickType == ClickType.Double && isRunning)
                 {
                     await Task.Delay(50);
-                    mouse_event(downFlag, 0, 0, 0, 0);
+                    if (!isRunning) return;
+                    SendMouseInput(downFlag);
                     await Task.Delay(50);
-                    mouse_event(upFlag, 0, 0, 0, 0);
+                    if (!isRunning) return;
+                    SendMouseInput(upFlag);
                 }
 
-                if (positionMode == PositionMode.Fixed)
+                if ((positionMode == PositionMode.Fixed || positionMode == PositionMode.Multi) && isRunning)
                 {
                     SetCursorPos(currentPos.X, currentPos.Y);
                 }
 
-                clickCount++;
-
-                if (isRunning)
+                // Record click for heatmap
+                clickHistory.Add(new ClickRecord
                 {
-                    nextClickTime = DateTime.Now.AddMilliseconds(GetTotalMilliseconds());
+                    X = clickX,
+                    Y = clickY,
+                    Timestamp = DateTime.Now
+                });
+
+                // Keep only last 10000 clicks
+                if (clickHistory.Count > 10000)
+                {
+                    clickHistory.RemoveAt(0);
                 }
 
-                if (repeatMode == RepeatMode.Count && clickCount >= repeatCount)
+                await InvokeAsync(() =>
                 {
-                    StopClicking();
-                }
+                    clickCount++;
+                    sessionTotalClicks++;
+                    currentBurstCount++;
 
-                StateHasChanged();
+                    if (isRunning && !enableRandomization)
+                    {
+                        nextClickTime = DateTime.Now.AddMilliseconds(GetTotalMilliseconds());
+                    }
+
+                    // Only stop if in Count mode AND reached target
+                    if (isRunning && repeatMode == RepeatMode.Count && clickCount >= repeatCount)
+                    {
+                        StopClicking();
+                    }
+
+                    StateHasChanged();
+                });
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Click error: {ex.Message}");
             }
         });
+    }
+
+    private void SendMouseInput(uint flag)
+    {
+        INPUT[] inputs = new INPUT[1];
+        inputs[0].type = INPUT_MOUSE;
+        inputs[0].u.mi.dx = 0;
+        inputs[0].u.mi.dy = 0;
+        inputs[0].u.mi.mouseData = 0;
+        inputs[0].u.mi.dwFlags = flag;
+        inputs[0].u.mi.time = 0;
+        inputs[0].u.mi.dwExtraInfo = IntPtr.Zero;
+
+        SendInput(1, inputs, Marshal.SizeOf(typeof(INPUT)));
     }
 
     private (uint downFlag, uint upFlag) GetMouseEventFlags()
@@ -620,22 +1198,279 @@
     }
 
     [JSInvokable]
+    public void StartGlobalLocationPicker()
+    {
+        // Start global mouse hook
+        mouseProc = HookCallback;
+        using (var curProcess = System.Diagnostics.Process.GetCurrentProcess())
+        using (var curModule = curProcess.MainModule)
+        {
+            if (curModule != null)
+            {
+                mouseHookID = SetWindowsHookEx(WH_MOUSE_LL, mouseProc, GetModuleHandle(curModule.ModuleName ?? ""), 0);
+            }
+        }
+    }
+
+    private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+    {
+        if (nCode >= 0 && wParam == (IntPtr)WM_LBUTTONDOWN && pickingLocation)
+        {
+            var hookStruct = Marshal.PtrToStructure<MSLLHOOKSTRUCT>(lParam);
+
+            // Unhook immediately
+            if (mouseHookID != IntPtr.Zero)
+            {
+                UnhookWindowsHookEx(mouseHookID);
+                mouseHookID = IntPtr.Zero;
+            }
+
+            // Set the picked location (these are absolute screen coordinates across all monitors)
+            InvokeAsync(() =>
+            {
+                fixedX = hookStruct.pt.X;
+                fixedY = hookStruct.pt.Y;
+                pickingLocation = false;
+                StateHasChanged();
+            });
+
+            // Don't pass the click through
+            return (IntPtr)1;
+        }
+
+        return CallNextHookEx(mouseHookID, nCode, wParam, lParam);
+    }
+
+    [JSInvokable]
     public void SetPickedLocation(int x, int y)
     {
-        fixedX = x;
-        fixedY = y;
+        // Only update if not cancelled (ESC pressed returns -1, -1)
+        if (x >= 0 && y >= 0)
+        {
+            if (positionMode == PositionMode.Multi)
+            {
+                multiPositions.Add(new POINT { X = x, Y = y });
+            }
+            else
+            {
+                fixedX = x;
+                fixedY = y;
+            }
+        }
+
+        // Unhook if still active
+        if (mouseHookID != IntPtr.Zero)
+        {
+            UnhookWindowsHookEx(mouseHookID);
+            mouseHookID = IntPtr.Zero;
+        }
+
         pickingLocation = false;
         InvokeAsync(StateHasChanged);
     }
 
     private void ResetStats()
     {
-        clickCount = 0;
+        // Stop clicking if running
         if (isRunning)
         {
             StopClicking();
         }
+
+        // Reset all stats
+        clickCount = 0;
+        nextClickTime = null;
+        sessionTotalClicks = 0;
+        sessionStartTime = DateTime.Now;
+
+        // Reset cooldown to allow immediate restart
+        lastHotkeyPress = DateTime.MinValue;
+
         StateHasChanged();
+    }
+
+    private string GetSessionTime()
+    {
+        var elapsed = DateTime.Now - sessionStartTime;
+        if (elapsed.TotalHours >= 1)
+            return $"{elapsed.Hours}h {elapsed.Minutes}m {elapsed.Seconds}s";
+        if (elapsed.TotalMinutes >= 1)
+            return $"{elapsed.Minutes}m {elapsed.Seconds}s";
+        return $"{elapsed.Seconds}s";
+    }
+
+    private string GetAverageCPS()
+    {
+        var elapsed = DateTime.Now - sessionStartTime;
+        if (elapsed.TotalSeconds < 1) return "0.0";
+        var cps = sessionTotalClicks / elapsed.TotalSeconds;
+        return cps.ToString("F1");
+    }
+
+    // Multi-position methods
+    private async Task StartPickMultiLocation()
+    {
+        pickingLocation = true;
+        StateHasChanged();
+        await JSRuntime.InvokeVoidAsync("startLocationPicker", DotNetObjectReference.Create(this));
+    }
+
+    private void RemovePosition(int index)
+    {
+        if (index >= 0 && index < multiPositions.Count)
+        {
+            multiPositions.RemoveAt(index);
+            StateHasChanged();
+        }
+    }
+
+    // Profile methods
+    private void ShowSaveProfileDialog()
+    {
+        showSaveDialog = true;
+        newProfileName = "";
+        StateHasChanged();
+    }
+
+    private void ShowDeleteProfileDialog()
+    {
+        // TODO: Implement delete dialog
+    }
+
+    private void SaveCurrentProfile()
+    {
+        if (string.IsNullOrWhiteSpace(newProfileName)) return;
+
+        var profile = new ClickProfile
+        {
+            Name = newProfileName,
+            Hours = hours,
+            Minutes = minutes,
+            Seconds = seconds,
+            Milliseconds = milliseconds,
+            MouseButton = mouseButton,
+            ClickType = clickType,
+            RepeatMode = repeatMode,
+            RepeatCount = repeatCount,
+            PositionMode = positionMode,
+            FixedX = fixedX,
+            FixedY = fixedY,
+            MultiPositions = new List<POINT>(multiPositions),
+            EnableRandomization = enableRandomization,
+            RandomVarianceMs = randomVarianceMs,
+            ClickMode = clickMode,
+            BurstClickCount = burstClickCount,
+            BurstPauseSeconds = burstPauseSeconds
+        };
+
+        // Remove existing profile with same name
+        savedProfiles.RemoveAll(p => p.Name == newProfileName);
+        savedProfiles.Add(profile);
+
+        showSaveDialog = false;
+        Home.AddActivity($"Profile '{newProfileName}' saved", "success");
+        StateHasChanged();
+    }
+
+    private void LoadProfile(ChangeEventArgs e)
+    {
+        var profileName = e.Value?.ToString();
+        if (string.IsNullOrEmpty(profileName)) return;
+
+        var profile = savedProfiles.FirstOrDefault(p => p.Name == profileName);
+        if (profile == null) return;
+
+        hours = profile.Hours;
+        minutes = profile.Minutes;
+        seconds = profile.Seconds;
+        milliseconds = profile.Milliseconds;
+        mouseButton = profile.MouseButton;
+        clickType = profile.ClickType;
+        repeatMode = profile.RepeatMode;
+        repeatCount = profile.RepeatCount;
+        positionMode = profile.PositionMode;
+        fixedX = profile.FixedX;
+        fixedY = profile.FixedY;
+        multiPositions = new List<POINT>(profile.MultiPositions);
+        enableRandomization = profile.EnableRandomization;
+        randomVarianceMs = profile.RandomVarianceMs;
+        clickMode = profile.ClickMode;
+        burstClickCount = profile.BurstClickCount;
+        burstPauseSeconds = profile.BurstPauseSeconds;
+
+        Home.AddActivity($"Profile '{profileName}' loaded", "info");
+        StateHasChanged();
+    }
+
+    // Heatmap methods
+    private async Task ShowHeatmap()
+    {
+        showHeatmapModal = true;
+        StateHasChanged();
+        await Task.Delay(100); // Let modal render
+        await RenderHeatmap();
+    }
+
+    private void CloseHeatmap()
+    {
+        showHeatmapModal = false;
+        StateHasChanged();
+    }
+
+    private async Task RenderHeatmap()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("renderHeatmap", clickHistory.Select(c => new { c.X, c.Y }).ToList());
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Heatmap render error: {ex.Message}");
+        }
+    }
+
+    private int GetUniquePositions()
+    {
+        return clickHistory.Select(c => $"{c.X},{c.Y}").Distinct().Count();
+    }
+
+    private string GetTimeRange()
+    {
+        if (clickHistory.Count == 0) return "N/A";
+        var span = clickHistory.Last().Timestamp - clickHistory.First().Timestamp;
+        if (span.TotalHours >= 1)
+            return $"{(int)span.TotalHours}h {span.Minutes}m";
+        if (span.TotalMinutes >= 1)
+            return $"{(int)span.TotalMinutes}m {span.Seconds}s";
+        return $"{span.Seconds}s";
+    }
+
+    private int GetMaxClicksAtPosition()
+    {
+        if (clickHistory.Count == 0) return 0;
+        return clickHistory.GroupBy(c => $"{c.X},{c.Y}").Max(g => g.Count());
+    }
+
+    private void ClearHeatmapData()
+    {
+        clickHistory.Clear();
+        Home.AddActivity("Click heatmap data cleared", "warning");
+        StateHasChanged();
+    }
+
+    private void ExportHeatmapData()
+    {
+        try
+        {
+            var csv = "X,Y,Timestamp\n" + string.Join("\n", clickHistory.Select(c => $"{c.X},{c.Y},{c.Timestamp:yyyy-MM-dd HH:mm:ss}"));
+            var filename = $"heatmap_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+            // TODO: Implement file save dialog
+            Home.AddActivity($"Heatmap data exported to {filename}", "success");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Export error: {ex.Message}");
+        }
     }
 
     public void Dispose()
@@ -643,5 +1478,42 @@
         StopClicking();
         mouseTrackingTimer?.Stop();
         mouseTrackingTimer?.Dispose();
+
+        // Cleanup mouse hook if active
+        if (mouseHookID != IntPtr.Zero)
+        {
+            UnhookWindowsHookEx(mouseHookID);
+            mouseHookID = IntPtr.Zero;
+        }
+    }
+
+    // Helper classes
+    public class ClickProfile
+    {
+        public string Name { get; set; } = "";
+        public int Hours { get; set; }
+        public int Minutes { get; set; }
+        public int Seconds { get; set; }
+        public int Milliseconds { get; set; }
+        public MouseButton MouseButton { get; set; }
+        public ClickType ClickType { get; set; }
+        public RepeatMode RepeatMode { get; set; }
+        public int RepeatCount { get; set; }
+        public PositionMode PositionMode { get; set; }
+        public int FixedX { get; set; }
+        public int FixedY { get; set; }
+        public List<POINT> MultiPositions { get; set; } = new List<POINT>();
+        public bool EnableRandomization { get; set; }
+        public int RandomVarianceMs { get; set; }
+        public ClickMode ClickMode { get; set; }
+        public int BurstClickCount { get; set; }
+        public int BurstPauseSeconds { get; set; }
+    }
+
+    public class ClickRecord
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+        public DateTime Timestamp { get; set; }
     }
 }

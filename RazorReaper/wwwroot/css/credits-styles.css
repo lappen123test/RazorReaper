@@ -13,6 +13,17 @@
     gap: 1.5rem;
 }
 
+.credits-layout .content-card {
+    animation: fadeInUp 0.6s ease-out;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+    .credits-layout .content-card:hover {
+        border-color: rgba(139, 92, 246, 0.3) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+    }
+
 .developer-info {
     display: flex;
     align-items: center;
@@ -39,10 +50,13 @@
     }
 
 .developer-details h2 {
-    color: var(--text-primary);
+    background: var(--gradient-purple);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     margin-bottom: 0.5rem;
     font-size: 1.5rem;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .developer-details p {
@@ -94,10 +108,13 @@
     }
 
 .credits-layout .content-card h3 {
-    color: var(--text-primary);
+    background: var(--gradient-purple);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     margin-bottom: 1rem;
     font-size: 1.125rem;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .credits-layout .content-card:nth-child(2) h3 {
@@ -199,11 +216,11 @@
     }
 
     .contact-info-card:hover {
-        background: linear-gradient(135deg, rgba(88, 101, 242, 0.1), rgba(88, 101, 242, 0.05));
-        border-color: #5865f2;
-        color: #5865f2;
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05));
+        border-color: var(--accent-purple);
+        color: var(--accent-purple);
         transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(88, 101, 242, 0.3);
+        box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
     }
 
 .contact-icon {
@@ -214,9 +231,9 @@
     justify-content: center;
     border-radius: 10px;
     flex-shrink: 0;
-    background: rgba(88, 101, 242, 0.15);
-    border: 1px solid rgba(88, 101, 242, 0.3);
-    color: #5865f2;
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    color: var(--accent-purple);
     transition: all 0.3s ease;
 }
 
@@ -282,37 +299,16 @@
         left: 100%;
     }
 
-    .social-button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-    }
-
-    .social-button.youtube:hover {
-        background: linear-gradient(135deg, rgba(255, 0, 0, 0.1), rgba(255, 0, 0, 0.05));
-        border-color: #ff0000;
-        color: #ff0000;
-        box-shadow: 0 8px 25px rgba(255, 0, 0, 0.3);
-    }
-
-    .social-button.telegram:hover {
-        background: linear-gradient(135deg, rgba(0, 136, 204, 0.1), rgba(0, 136, 204, 0.05));
-        border-color: #0088cc;
-        color: #0088cc;
-        box-shadow: 0 8px 25px rgba(0, 136, 204, 0.3);
-    }
-
-    .social-button.github:hover {
-        background: linear-gradient(135deg, rgba(110, 64, 201, 0.1), rgba(110, 64, 201, 0.05));
-        border-color: #6e40c9;
-        color: #6e40c9;
-        box-shadow: 0 8px 25px rgba(110, 64, 201, 0.3);
-    }
-
+    .social-button:hover,
+    .social-button.youtube:hover,
+    .social-button.telegram:hover,
+    .social-button.github:hover,
     .social-button.steam:hover {
-        background: linear-gradient(135deg, rgba(102, 192, 244, 0.1), rgba(102, 192, 244, 0.05));
-        border-color: #66c0f4;
-        color: #66c0f4;
-        box-shadow: 0 8px 25px rgba(102, 192, 244, 0.3);
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05));
+        border-color: var(--accent-purple);
+        color: var(--accent-purple);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
     }
 
 .social-icon {
@@ -326,24 +322,12 @@
     transition: all 0.3s ease;
 }
 
-.social-button.youtube .social-icon {
-    background: rgba(255, 0, 0, 0.15);
-    color: #ff0000;
-}
-
-.social-button.telegram .social-icon {
-    background: rgba(0, 136, 204, 0.15);
-    color: #0088cc;
-}
-
-.social-button.github .social-icon {
-    background: rgba(110, 64, 201, 0.15);
-    color: #6e40c9;
-}
-
+.social-button.youtube .social-icon,
+.social-button.telegram .social-icon,
+.social-button.github .social-icon,
 .social-button.steam .social-icon {
-    background: rgba(102, 192, 244, 0.15);
-    color: #66c0f4;
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--accent-purple);
 }
 
 .social-icon svg {
@@ -547,5 +531,16 @@
     .social-button,
     .contact-info-card {
         padding: 0.75rem;
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
