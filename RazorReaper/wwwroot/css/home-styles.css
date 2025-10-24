@@ -366,13 +366,13 @@
 }
 
 .resource-fill.cpu {
-    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    background: linear-gradient(90deg, #8b5cf6, #6d28d9);
     box-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
 }
 
 .resource-fill.ram {
-    background: linear-gradient(90deg, #10b981, #14b8a6);
-    box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+    background: linear-gradient(90deg, #a78bfa, #8b5cf6);
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
 }
 
 .resource-info {
@@ -414,8 +414,8 @@
 }
 
     .status-indicator.healthy {
-        background-color: var(--accent-green);
-        box-shadow: 0 0 12px rgba(34, 197, 94, 0.6);
+        background-color: var(--accent-purple);
+        box-shadow: 0 0 12px rgba(139, 92, 246, 0.6);
     }
 
     .status-indicator.warning {
@@ -459,8 +459,8 @@
 }
 
     .stat-icon.success {
-        background: rgba(34, 197, 94, 0.2);
-        color: var(--accent-green);
+        background: rgba(139, 92, 246, 0.2);
+        color: var(--accent-purple);
     }
 
     .stat-icon.primary {
@@ -551,13 +551,13 @@
 }
 
     .action-icon.server {
-        background: rgba(59, 130, 246, 0.2);
-        color: var(--accent-blue);
+        background: rgba(139, 92, 246, 0.2);
+        color: var(--accent-purple);
     }
 
     .action-icon.config {
-        background: rgba(34, 197, 94, 0.2);
-        color: var(--accent-green);
+        background: rgba(139, 92, 246, 0.2);
+        color: var(--accent-purple);
     }
 
     .action-icon.game {
@@ -654,8 +654,8 @@
 }
 
     .preset-status.active {
-        background: var(--accent-green);
-        box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+        background: var(--accent-purple);
+        box-shadow: 0 0 8px rgba(139, 92, 246, 0.6);
     }
 
 .preset-description {
@@ -690,7 +690,7 @@
 }
 
 .activity-title {
-    color: var(--accent-green);
+    color: var(--accent-purple);
     margin-bottom: 1.5rem;
 }
 
@@ -712,7 +712,7 @@
 }
 
     .activity-item.success {
-        border-left-color: var(--accent-green);
+        border-left-color: var(--accent-purple);
     }
 
     .activity-item.warning {
@@ -720,7 +720,7 @@
     }
 
     .activity-item.info {
-        border-left-color: var(--accent-blue);
+        border-left-color: var(--accent-purple);
     }
 
 .activity-icon {
@@ -734,8 +734,8 @@
 }
 
 .activity-item.success .activity-icon {
-    background: rgba(34, 197, 94, 0.2);
-    color: var(--accent-green);
+    background: rgba(139, 92, 246, 0.2);
+    color: var(--accent-purple);
 }
 
 .activity-item.warning .activity-icon {
@@ -744,8 +744,8 @@
 }
 
 .activity-item.info .activity-icon {
-    background: rgba(59, 130, 246, 0.2);
-    color: var(--accent-blue);
+    background: rgba(139, 92, 246, 0.2);
+    color: var(--accent-purple);
 }
 
 .activity-icon svg {
@@ -812,8 +812,8 @@
 }
 
     .path-status.success {
-        background: rgba(34, 197, 94, 0.2);
-        color: var(--accent-green);
+        background: rgba(139, 92, 246, 0.2);
+        color: var(--accent-purple);
     }
 
     .path-status svg {

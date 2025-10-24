@@ -36,8 +36,8 @@
 }
 
     .game-page-container .status-dot.online {
-        background: var(--accent-green);
-        box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+        background: var(--accent-purple);
+        box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
     }
 
     .game-page-container .status-dot.offline {
@@ -59,7 +59,7 @@
     }
 
     .game-page-container .status-dot.online::after {
-        color: var(--accent-green);
+        color: var(--accent-purple);
     }
 
     .game-page-container .status-dot.offline::after {

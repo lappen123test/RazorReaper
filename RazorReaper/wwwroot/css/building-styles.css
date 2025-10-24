@@ -250,7 +250,7 @@
 .prerequisite-check {
     width: 20px;
     height: 20px;
-    background: linear-gradient(135deg, var(--accent-green), var(--dark-green));
+    background: linear-gradient(135deg, var(--accent-purple), var(--accent-purple-dark));
     color: white;
     border-radius: 50%;
     display: flex;
@@ -259,7 +259,7 @@
     font-size: 0.8rem;
     font-weight: bold;
     flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
 }
 
 .prerequisite-item span {
