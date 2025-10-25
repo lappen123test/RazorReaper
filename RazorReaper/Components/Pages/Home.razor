@@ -15,6 +15,7 @@
 @inject ILogger<Home> Logger
 @inject IOptions<AppConfiguration> Configuration
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
 @implements IAsyncDisposable
 
 <div class="app-container">
@@ -57,6 +58,9 @@
                 else if (weather != null)
                 {
                     <div class="weather-display">
+                        <div class="weather-icon-container">
+                            @GetWeatherIcon(weather.Condition)
+                        </div>
                         <div class="weather-main">
                             <div class="weather-temp">@weather.Temperature°C</div>
                             <div class="weather-condition">@weather.Condition</div>
@@ -75,16 +79,9 @@
                 }
                 else
                 {
-                    <div class="weather-error">
-                        <svg fill="currentColor" viewBox="0 0 20 20" class="error-icon">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                        </svg>
-                        <p>Unable to load weather</p>
-                        <p class="error-hint">Check your internet connection</p>
+                    <div class="weather-error-simple">
+                        <p>Weather unavailable</p>
                         <button class="btn-small btn-retry" @onclick="LoadWeatherData">
-                            <svg fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
-                            </svg>
                             Retry
                         </button>
                     </div>
@@ -131,6 +128,18 @@
                             <div class="resource-fill cpu" style="width: @cpuUsage%"></div>
                         </div>
                     </div>
+                    @if (hasGpuCounter)
+                    {
+                        <div class="resource-item">
+                            <div class="resource-header">
+                                <span class="resource-label">GPU</span>
+                                <span class="resource-value">@gpuUsage%</span>
+                            </div>
+                            <div class="resource-bar">
+                                <div class="resource-fill gpu" style="width: @gpuUsage%"></div>
+                            </div>
+                        </div>
+                    }
                     <div class="resource-item">
                         <div class="resource-header">
                             <span class="resource-label">RAM</span>
@@ -149,6 +158,49 @@
                             <span>Process:</span>
                             <span>@processMemoryMB MB</span>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-card widget-card wifi-widget">
+                <div class="widget-header">
+                    <svg fill="currentColor" viewBox="0 0 20 20" class="widget-icon">
+                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                        <path fill-rule="evenodd" d="M2 10a8 8 0 1116 0 8 8 0 01-16 0zm8-6a6 6 0 100 12 6 6 0 000-12z" clip-rule="evenodd" />
+                    </svg>
+                    <h3>Network</h3>
+                </div>
+                <div class="wifi-info">
+                    <div class="wifi-detail">
+                        <div class="wifi-label">Connection</div>
+                        <div class="wifi-value">@wifiName</div>
+                    </div>
+                    <div class="wifi-detail">
+                        <div class="wifi-label">Signal Strength</div>
+                        <div class="wifi-value">@wifiSignalStrength</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-card widget-card hardware-widget">
+                <div class="widget-header">
+                    <svg fill="currentColor" viewBox="0 0 20 20" class="widget-icon">
+                        <path fill-rule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7H5V5h10v7H8.771z" clip-rule="evenodd" />
+                    </svg>
+                    <h3>Hardware</h3>
+                </div>
+                <div class="hardware-info">
+                    <div class="hardware-item">
+                        <div class="hardware-label">CPU</div>
+                        <div class="hardware-value">@cpuName</div>
+                    </div>
+                    <div class="hardware-item">
+                        <div class="hardware-label">GPU</div>
+                        <div class="hardware-value">@gpuName</div>
+                    </div>
+                    <div class="hardware-item">
+                        <div class="hardware-label">Motherboard</div>
+                        <div class="hardware-value">@motherboardName</div>
                     </div>
                 </div>
             </div>
@@ -394,7 +446,7 @@
 @code {
     private SystemStatus systemStatus = new SystemStatus { IsHealthy = true };
     private DateTime currentTime = DateTime.Now;
-    private System.Timers.Timer? clockTimer;
+    private System.Timers.Timer? updateTimer; // Consolidated timer for clock and session
 
     private WeatherData? weather = null;
     private bool weatherLoading = true;
@@ -402,30 +454,48 @@
     private long totalLifetimeClicks = 0;
     private string totalSessionTime = "0h 0m";
     private int configChanges = 0;
+    private DateTime sessionStartTime = DateTime.Now;
 
     private const string CLICKS_STORAGE_KEY = "TotalLifetimeClicks";
     private const string CONFIG_CHANGES_STORAGE_KEY = "ConfigChanges";
+    private const string SESSION_START_TIME_KEY = "SessionStartTime";
 
     // System resources
     private int cpuUsage = 0;
     private int ramUsage = 0;
+    private int gpuUsage = 0;
     private double ramUsedGB = 0;
     private double ramTotalGB = 0;
     private double processMemoryMB = 0;
     private System.Timers.Timer? resourceTimer;
     private PerformanceCounter? cpuCounter;
     private PerformanceCounter? ramCounter;
+    private List<PerformanceCounter> gpuCounters = new();
+    private bool hasGpuCounter = false;
+    private Process? currentProcess; // Cache current process to avoid creating new ones
+
+    // WiFi and System Info
+    private string wifiName = "Not Connected";
+    private string wifiSignalStrength = "N/A";
+    private string cpuName = "Unknown";
+    private string gpuName = "Unknown";
+    private string motherboardName = "Unknown";
 
     protected override async Task OnInitializedAsync()
     {
-        // Start clock timer
-        clockTimer = new System.Timers.Timer(1000);
-        clockTimer.Elapsed += (s, e) =>
+        // Load or create session start time
+        await LoadSessionStartTime();
+
+        // Start consolidated update timer (updates clock and session time together)
+        // Reduced to 2 seconds to minimize StateHasChanged calls and reduce lag
+        updateTimer = new System.Timers.Timer(2000);
+        updateTimer.Elapsed += (s, e) =>
         {
             currentTime = DateTime.Now;
+            UpdateSessionTime();
             InvokeAsync(StateHasChanged);
         };
-        clockTimer.Start();
+        updateTimer.Start();
 
         // Load weather data
         await LoadWeatherData();
@@ -438,6 +508,10 @@
 
         // Start resource monitoring
         StartResourceMonitoring();
+
+        // Load WiFi and system information
+        LoadWiFiInfo();
+        LoadSystemHardwareInfo();
 
         await base.OnInitializedAsync();
     }
@@ -454,20 +528,78 @@
             cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
             ramCounter = new PerformanceCounter("Memory", "% Committed Bytes In Use");
 
+            // Try to initialize GPU counters - create all upfront to avoid lag
+            try
+            {
+                Logger.LogInformation("Detecting GPU performance counters for RTX 4060ti...");
+
+                if (PerformanceCounterCategory.Exists("GPU Engine"))
+                {
+                    var cat = new PerformanceCounterCategory("GPU Engine");
+                    var instanceNames = cat.GetInstanceNames();
+
+                    Logger.LogDebug("Found {Count} GPU Engine instances", instanceNames.Length);
+
+                    // Find and create counters for ALL 3D engine instances
+                    int gpuEngineCount = 0;
+                    foreach (var instance in instanceNames)
+                    {
+                        if (instance.Contains("engtype_3D", StringComparison.OrdinalIgnoreCase))
+                        {
+                            try
+                            {
+                                var counter = new PerformanceCounter("GPU Engine", "Utilization Percentage", instance);
+                                counter.NextValue(); // Initialize
+                                gpuCounters.Add(counter);
+                                gpuEngineCount++;
+                                Logger.LogDebug("GPU 3D Engine added: {Instance}", instance);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.LogDebug(ex, "Failed to add GPU counter for: {Instance}", instance);
+                            }
+                        }
+                    }
+
+                    if (gpuCounters.Count > 0)
+                    {
+                        hasGpuCounter = true;
+                        Logger.LogInformation("GPU monitoring enabled: Found {Count} 3D engines for RTX 4060ti", gpuCounters.Count);
+                    }
+                    else
+                    {
+                        Logger.LogWarning("No GPU 3D engines found - GPU monitoring disabled");
+                    }
+                }
+                else
+                {
+                    Logger.LogWarning("GPU Engine performance category not found - GPU monitoring disabled");
+                }
+            }
+            catch (Exception gpuEx)
+            {
+                Logger.LogError(gpuEx, "Error initializing GPU counters: {Message}", gpuEx.Message);
+                hasGpuCounter = false;
+            }
+
             // Get total RAM using WMI
             GetPhysicallyInstalledSystemMemory(out long totalMemoryKB);
             ramTotalGB = Math.Round(totalMemoryKB / 1024.0 / 1024.0, 2);
+
+            // Cache current process to avoid creating new ones every update
+            currentProcess = Process.GetCurrentProcess();
 
             // First read to initialize counters
             cpuCounter.NextValue();
             ramCounter.NextValue();
 
-            // Start monitoring timer
-            resourceTimer = new System.Timers.Timer(2000); // Update every 2 seconds
+            // Start monitoring timer (5 seconds to reduce overhead and prevent lag)
+            resourceTimer = new System.Timers.Timer(5000);
             resourceTimer.Elapsed += UpdateResources;
             resourceTimer.Start();
 
-            Logger.LogDebug("Resource monitoring started: {TotalRAM} GB total RAM", ramTotalGB);
+            Logger.LogInformation("Resource monitoring started: {TotalRAM} GB total RAM, GPU monitoring: {HasGPU} with {GPUCount} engines",
+                ramTotalGB, hasGpuCounter, gpuCounters.Count);
         }
         catch (Exception ex)
         {
@@ -485,19 +617,193 @@
             // Get RAM usage
             ramUsage = (int)Math.Round(ramCounter?.NextValue() ?? 0);
 
+            // Get GPU usage - read from pre-created counters (NO LAG!)
+            if (hasGpuCounter && gpuCounters.Count > 0)
+            {
+                try
+                {
+                    float maxGpu = 0;
+                    foreach (var counter in gpuCounters)
+                    {
+                        var value = counter.NextValue();
+                        if (value > maxGpu)
+                        {
+                            maxGpu = value;
+                        }
+                    }
+                    gpuUsage = (int)Math.Round(maxGpu);
+                }
+                catch (Exception gpuEx)
+                {
+                    Logger.LogDebug(gpuEx, "Error reading GPU usage");
+                }
+            }
+
             // Calculate used RAM
             var totalMemory = (long)(ramTotalGB * 1024.0 * 1024.0 * 1024.0);
             ramUsedGB = Math.Round((ramUsage / 100.0) * ramTotalGB, 2);
 
-            // Get current process memory
-            var process = Process.GetCurrentProcess();
-            processMemoryMB = Math.Round(process.WorkingSet64 / 1024.0 / 1024.0, 1);
+            // Get current process memory - use cached process to avoid lag
+            if (currentProcess != null)
+            {
+                try
+                {
+                    currentProcess.Refresh(); // Refresh the cached process data
+                    processMemoryMB = Math.Round(currentProcess.WorkingSet64 / 1024.0 / 1024.0, 1);
+                }
+                catch
+                {
+                    // Process might have exited, recreate it
+                    currentProcess?.Dispose();
+                    currentProcess = Process.GetCurrentProcess();
+                    processMemoryMB = Math.Round(currentProcess.WorkingSet64 / 1024.0 / 1024.0, 1);
+                }
+            }
 
             InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error updating resource usage");
+        }
+    }
+
+    private void UpdateSessionTime()
+    {
+        var elapsed = DateTime.Now - sessionStartTime;
+        var hours = (int)elapsed.TotalHours;
+        var minutes = elapsed.Minutes;
+        var seconds = elapsed.Seconds;
+
+        if (hours > 0)
+        {
+            totalSessionTime = $"{hours}h {minutes}m";
+        }
+        else if (minutes > 0)
+        {
+            totalSessionTime = $"{minutes}m {seconds}s";
+        }
+        else
+        {
+            totalSessionTime = $"{seconds}s";
+        }
+    }
+
+    private void LoadWiFiInfo()
+    {
+        try
+        {
+            Logger.LogDebug("Loading WiFi information using netsh");
+
+            // Use netsh command to get WiFi information - more reliable than WMI
+            var processInfo = new ProcessStartInfo
+            {
+                FileName = "netsh",
+                Arguments = "wlan show interfaces",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(processInfo);
+            if (process != null)
+            {
+                var output = process.StandardOutput.ReadToEnd();
+                process.WaitForExit();
+
+                Logger.LogDebug("Netsh output received, parsing...");
+
+                // Parse the output to extract SSID and signal strength
+                var lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (var line in lines)
+                {
+                    var trimmedLine = line.Trim();
+
+                    if (trimmedLine.StartsWith("SSID", StringComparison.OrdinalIgnoreCase) &&
+                        !trimmedLine.StartsWith("BSSID", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var parts = trimmedLine.Split(':');
+                        if (parts.Length >= 2)
+                        {
+                            wifiName = parts[1].Trim();
+                            if (string.IsNullOrWhiteSpace(wifiName))
+                            {
+                                wifiName = "Not Connected";
+                            }
+                        }
+                    }
+                    else if (trimmedLine.StartsWith("Signal", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var parts = trimmedLine.Split(':');
+                        if (parts.Length >= 2)
+                        {
+                            wifiSignalStrength = parts[1].Trim();
+                        }
+                    }
+                }
+
+                Logger.LogInformation("WiFi detected: {Name} - {Signal}", wifiName, wifiSignalStrength);
+            }
+            else
+            {
+                Logger.LogWarning("Failed to start netsh process");
+                wifiName = "Unable to detect";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading WiFi information: {Message}", ex.Message);
+            wifiName = "Not Connected";
+            wifiSignalStrength = "N/A";
+        }
+    }
+
+    private void LoadSystemHardwareInfo()
+    {
+        try
+        {
+            // Get CPU name
+            using (var searcher = new ManagementObjectSearcher("SELECT Name FROM Win32_Processor"))
+            {
+                foreach (ManagementObject processor in searcher.Get())
+                {
+                    cpuName = processor["Name"]?.ToString()?.Trim() ?? "Unknown";
+                    break;
+                }
+            }
+
+            // Get GPU name
+            using (var searcher = new ManagementObjectSearcher("SELECT Name FROM Win32_VideoController"))
+            {
+                foreach (ManagementObject gpu in searcher.Get())
+                {
+                    var name = gpu["Name"]?.ToString() ?? "";
+                    if (!string.IsNullOrWhiteSpace(name) && !name.Contains("Microsoft Basic", StringComparison.OrdinalIgnoreCase))
+                    {
+                        gpuName = name.Trim();
+                        break;
+                    }
+                }
+            }
+
+            // Get Motherboard name
+            using (var searcher = new ManagementObjectSearcher("SELECT Product, Manufacturer FROM Win32_BaseBoard"))
+            {
+                foreach (ManagementObject board in searcher.Get())
+                {
+                    var manufacturer = board["Manufacturer"]?.ToString() ?? "";
+                    var product = board["Product"]?.ToString() ?? "";
+                    motherboardName = $"{manufacturer} {product}".Trim();
+                    break;
+                }
+            }
+
+            Logger.LogDebug("Hardware loaded: CPU={CPU}, GPU={GPU}, Motherboard={Motherboard}", cpuName, gpuName, motherboardName);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading system hardware information");
         }
     }
 
@@ -515,16 +821,19 @@
             {
                 Logger.LogInformation("Weather loaded successfully: {Temperature}°C, {Condition} in {City}",
                     weather.Temperature, weather.Condition, weather.City);
+                NotificationService.ShowSuccess($"Weather loaded: {weather.Temperature}°C in {weather.City}");
             }
             else
             {
                 Logger.LogWarning("Weather data could not be loaded");
+                NotificationService.ShowError("Unable to load weather data. Please check your internet connection.");
             }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading weather data");
             weather = null;
+            NotificationService.ShowError("Failed to load weather. Please try again later.");
         }
         finally
         {
@@ -533,6 +842,34 @@
         }
     }
 
+
+    private async Task LoadSessionStartTime()
+    {
+        try
+        {
+            // Use sessionStorage instead of localStorage - clears when app closes!
+            var sessionStartStr = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", SESSION_START_TIME_KEY);
+
+            if (!string.IsNullOrEmpty(sessionStartStr) && long.TryParse(sessionStartStr, out long ticks))
+            {
+                sessionStartTime = new DateTime(ticks);
+                Logger.LogInformation("Session resumed: Started at {Time}, elapsed {Elapsed}",
+                    sessionStartTime, DateTime.Now - sessionStartTime);
+            }
+            else
+            {
+                // New session - set fresh start time
+                sessionStartTime = DateTime.Now;
+                await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", SESSION_START_TIME_KEY, sessionStartTime.Ticks.ToString());
+                Logger.LogInformation("New session started at {Time}", sessionStartTime);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading session start time, using current time");
+            sessionStartTime = DateTime.Now;
+        }
+    }
 
     private async Task LoadStatistics()
     {
@@ -580,16 +917,114 @@
         StateHasChanged();
     }
 
+    private RenderFragment GetWeatherIcon(string condition)
+    {
+        var conditionLower = condition.ToLower();
+
+        if (conditionLower.Contains("clear") || conditionLower.Contains("sunny"))
+        {
+            return @<svg class="weather-icon sunny" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <circle class="sun" cx="100" cy="100" r="35" fill="#fbbf24"/>
+                <g class="sun-rays">
+                    @for (int i = 0; i < 8; i++)
+                    {
+                        var angle = i * 45;
+                        <line x1="100" y1="40" x2="100" y2="20" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"
+                              transform="rotate(@angle 100 100)" style="animation-delay: @(i * 0.1)s"/>
+                    }
+                </g>
+            </svg>;
+        }
+        else if (conditionLower.Contains("cloud") || conditionLower.Contains("overcast"))
+        {
+            return @<svg class="weather-icon cloudy" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <ellipse class="cloud cloud-1" cx="80" cy="100" rx="35" ry="25" fill="#e5e7eb"/>
+                <ellipse class="cloud cloud-2" cx="110" cy="95" rx="40" ry="30" fill="#d1d5db"/>
+                <ellipse class="cloud cloud-3" cx="100" cy="110" rx="45" ry="28" fill="#f3f4f6"/>
+            </svg>;
+        }
+        else if (conditionLower.Contains("rain") || conditionLower.Contains("drizzle") || conditionLower.Contains("shower"))
+        {
+            return @<svg class="weather-icon rainy" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <ellipse cx="80" cy="80" rx="35" ry="25" fill="#9ca3af"/>
+                <ellipse cx="110" cy="75" rx="40" ry="30" fill="#6b7280"/>
+                <ellipse cx="100" cy="90" rx="45" ry="28" fill="#9ca3af"/>
+                <g class="rain-drops">
+                    @for (int i = 0; i < 5; i++)
+                    {
+                        var x = 70 + (i * 15);
+                        <line class="rain-drop" x1="@x" y1="120" x2="@x" y2="150" stroke="#60a5fa" stroke-width="3"
+                              stroke-linecap="round" style="animation-delay: @(i * 0.2)s"/>
+                    }
+                </g>
+            </svg>;
+        }
+        else if (conditionLower.Contains("snow"))
+        {
+            return @<svg class="weather-icon snowy" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <ellipse cx="80" cy="80" rx="35" ry="25" fill="#cbd5e1"/>
+                <ellipse cx="110" cy="75" rx="40" ry="30" fill="#94a3b8"/>
+                <ellipse cx="100" cy="90" rx="45" ry="28" fill="#e2e8f0"/>
+                <g class="snow-flakes">
+                    @for (int i = 0; i < 6; i++)
+                    {
+                        var x = 60 + (i * 16);
+                        var y = 120 + ((i % 2) * 20);
+                        <circle class="snowflake" cx="@x" cy="@y" r="3" fill="#93c5fd" style="animation-delay: @(i * 0.3)s"/>
+                    }
+                </g>
+            </svg>;
+        }
+        else if (conditionLower.Contains("thunder") || conditionLower.Contains("storm"))
+        {
+            return @<svg class="weather-icon stormy" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <ellipse cx="80" cy="80" rx="35" ry="25" fill="#4b5563"/>
+                <ellipse cx="110" cy="75" rx="40" ry="30" fill="#374151"/>
+                <ellipse cx="100" cy="90" rx="45" ry="28" fill="#6b7280"/>
+                <path class="lightning" d="M 100 110 L 95 130 L 105 130 L 100 150" fill="#fbbf24" stroke="#f59e0b" stroke-width="1"/>
+            </svg>;
+        }
+        else if (conditionLower.Contains("fog") || conditionLower.Contains("mist") || conditionLower.Contains("haze"))
+        {
+            return @<svg class="weather-icon foggy" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <g class="fog-lines">
+                    @for (int i = 0; i < 5; i++)
+                    {
+                        var y = 80 + (i * 15);
+                        var opacity = 0.3 + (i * 0.1);
+                        <line class="fog-line" x1="50" y1="@y" x2="150" y2="@y" stroke="#9ca3af"
+                              stroke-width="8" stroke-linecap="round" opacity="@opacity" style="animation-delay: @(i * 0.2)s"/>
+                    }
+                </g>
+            </svg>;
+        }
+        else
+        {
+            // Default icon
+            return @<svg class="weather-icon default" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="100" cy="100" r="35" fill="#8b5cf6" opacity="0.6"/>
+            </svg>;
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
         Logger.LogDebug("Disposing Home component resources");
 
-        clockTimer?.Stop();
-        clockTimer?.Dispose();
+        updateTimer?.Stop();
+        updateTimer?.Dispose();
         resourceTimer?.Stop();
         resourceTimer?.Dispose();
         cpuCounter?.Dispose();
         ramCounter?.Dispose();
+        currentProcess?.Dispose();
+
+        // Dispose all GPU counters
+        foreach (var counter in gpuCounters)
+        {
+            counter?.Dispose();
+        }
+        gpuCounters.Clear();
 
         await Task.CompletedTask;
     }

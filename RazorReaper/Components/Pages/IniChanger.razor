@@ -10,6 +10,7 @@
 @inject IArkPathProvider ArkPathProvider
 @inject IFileSystemService FileSystem
 @inject ILogger<IniChanger> Logger
+@inject INotificationService NotificationService
 
 <div class="app-container">
     <RazorReaper.Components.Shared.SharedNavbar />
@@ -65,25 +66,6 @@
                             Clear File
                         </button>
                     </div>
-
-                    @if (!string.IsNullOrEmpty(statusMessage))
-                    {
-                        <div class="ini-status-message @GetStatusClass()">
-                            <div class="status-content">
-                                @if (isPathStatus && !string.IsNullOrEmpty(currentPath))
-                                {
-                                    <div style="font-weight: 600; margin-bottom: 0.4rem;">@GetStatusTitle()</div>
-                                    <div class="path-info-display">
-                                        @currentPath
-                                    </div>
-                                }
-                                else
-                                {
-                                    <div>@statusMessage</div>
-                                }
-                            </div>
-                        </div>
-                    }
                 </div>
 
                 <div class="content-card">
@@ -191,106 +173,86 @@
 
 @code {
     private string currentIniContent = "";
-    private string statusMessage = "";
     private string selectedPreset = "";
-    private string currentPath = "";
-    private bool isPathStatus = false;
     private bool showImages = false;
-    private StatusType currentStatusType = StatusType.Info;
-
-    private enum StatusType
-    {
-        Success,
-        Error,
-        Warning,
-        Info
-    }
 
     private void ToggleImages()
     {
         showImages = !showImages;
     }
 
-    private string GetStatusClass()
-    {
-        return currentStatusType switch
-        {
-            StatusType.Success => "status-success",
-            StatusType.Error => "status-error",
-            StatusType.Warning => "status-warning",
-            StatusType.Info => "status-info",
-            _ => "status-info"
-        };
-    }
-
-    private string GetStatusTitle()
-    {
-        return currentStatusType switch
-        {
-            StatusType.Success => "✅ INI File Found",
-            StatusType.Error => "❌ INI File Not Found",
-            StatusType.Warning => "⚠️ Steam Path Issue",
-            _ => "ℹ️ Path Information"
-        };
-    }
-
-    private void SetStatus(string message, StatusType type, bool isPath = false, string path = "")
-    {
-        statusMessage = message;
-        currentStatusType = type;
-        isPathStatus = isPath;
-        currentPath = path;
-        StateHasChanged();
-    }
-
-    private void OpenIniFile()
+    private async Task OpenIniFile()
     {
         try
         {
-            string? iniPath = ArkUtilities.GetBaseDeviceProfilesPath();
+            Logger.LogInformation("Opening INI file");
 
-            if (iniPath == null)
+            // Run file operations on background thread to prevent UI freezing
+            await Task.Run(() =>
             {
-                SetStatus("Steam installation not found in registry.", StatusType.Error);
-                return;
-            }
+                string? iniPath = ArkUtilities.GetBaseDeviceProfilesPath();
 
-            if (!File.Exists(iniPath))
-            {
-                SetStatus("INI file does not exist. Create it first using the 'Create New' button.", StatusType.Warning);
-                return;
-            }
+                if (iniPath == null)
+                {
+                    InvokeAsync(() => NotificationService.ShowError("Steam installation not found in registry."));
+                    return;
+                }
 
-            currentIniContent = File.ReadAllText(iniPath);
-            SetStatus("INI file loaded successfully.", StatusType.Success);
+                if (!File.Exists(iniPath))
+                {
+                    InvokeAsync(() => NotificationService.ShowWarning("INI file does not exist at expected location."));
+                    return;
+                }
+
+                currentIniContent = File.ReadAllText(iniPath);
+                InvokeAsync(() =>
+                {
+                    NotificationService.ShowSuccess("INI file loaded successfully.");
+                    StateHasChanged();
+                });
+                Logger.LogInformation("INI file loaded from: {Path}", iniPath);
+            });
         }
         catch (Exception ex)
         {
-            SetStatus($"Error loading INI file: {ex.Message}", StatusType.Error);
+            Logger.LogError(ex, "Error loading INI file");
+            NotificationService.ShowError($"Error loading INI file: {ex.Message}");
         }
     }
 
-    private void ClearFile()
+    private async Task ClearFile()
     {
         try
         {
-            string? iniPath = ArkUtilities.GetBaseDeviceProfilesPath();
+            Logger.LogInformation("Clearing INI file");
 
-            if (iniPath == null)
+            // Run file operations on background thread
+            await Task.Run(() =>
             {
-                SetStatus("Steam installation not found in registry.", StatusType.Error);
-                return;
-            }
+                string? iniPath = ArkUtilities.GetBaseDeviceProfilesPath();
 
-            currentIniContent = "";
-            File.WriteAllText(iniPath, currentIniContent);
+                if (iniPath == null)
+                {
+                    InvokeAsync(() => NotificationService.ShowError("Steam installation not found in registry."));
+                    return;
+                }
 
-            selectedPreset = "";
-            SetStatus("INI file content cleared successfully.", StatusType.Success);
+                currentIniContent = "";
+                File.WriteAllText(iniPath, currentIniContent);
+
+                InvokeAsync(() =>
+                {
+                    selectedPreset = "";
+                    NotificationService.ShowSuccess("INI file content cleared successfully.");
+                    StateHasChanged();
+                });
+                Logger.LogInformation("INI file cleared");
+            });
         }
         catch (Exception ex)
         {
-            SetStatus($"Error clearing INI file: {ex.Message}", StatusType.Error);
+            Logger.LogError(ex, "Error clearing INI file");
+            NotificationService.ShowError($"Error clearing INI file: {ex.Message}");
         }
     }
 
@@ -299,171 +261,201 @@
         selectedPreset = preset.Name;
         showImages = false;
         currentIniContent = preset.Content;
-        SetStatus($"Selected preset: {preset.Name}", StatusType.Success);
+        NotificationService.ShowSuccess($"Selected preset: {preset.Name}");
+        Logger.LogInformation("Preset selected: {PresetName}", preset.Name);
     }
 
-    private void SaveChanges()
+    private async Task SaveChanges()
     {
         try
         {
-            string? iniPath = ArkUtilities.GetBaseDeviceProfilesPath();
+            Logger.LogInformation("Saving INI file changes");
 
-            if (iniPath == null)
+            // Run file operations on background thread
+            await Task.Run(() =>
             {
-                SetStatus("Steam installation not found in registry.", StatusType.Error);
-                return;
-            }
+                string? iniPath = ArkUtilities.GetBaseDeviceProfilesPath();
 
-            var directory = Path.GetDirectoryName(iniPath);
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory!);
-            }
-
-            File.WriteAllText(iniPath, currentIniContent);
-            SetStatus("INI file saved successfully!", StatusType.Success);
-        }
-        catch (Exception ex)
-        {
-            SetStatus($"Error saving INI file: {ex.Message}", StatusType.Error);
-        }
-    }
-
-    private void CheckIniFileExists()
-    {
-        try
-        {
-            string? iniPath = ArkUtilities.GetBaseDeviceProfilesPath();
-
-            if (iniPath == null)
-            {
-                SetStatus("Steam installation not found in registry. Please ensure Steam is properly installed.", StatusType.Error, true, "Registry path not found");
-                return;
-            }
-
-            if (!File.Exists(iniPath))
-            {
-                SetStatus("INI file not found at the expected location.", StatusType.Warning, true, iniPath);
-            }
-            else
-            {
-                var fileInfo = new FileInfo(iniPath);
-                var fileSize = fileInfo.Length;
-                var lastModified = fileInfo.LastWriteTime;
-
-                SetStatus($"File exists • Size: {fileSize} bytes • Modified: {lastModified:yyyy-MM-dd HH:mm}", StatusType.Success, true, iniPath);
-            }
-        }
-        catch (Exception ex)
-        {
-            SetStatus($"Error checking INI file: {ex.Message}", StatusType.Error);
-        }
-    }
-
-    private void CheckWaterFiles()
-    {
-        try
-        {
-            string? arkBasePath = ArkUtilities.FindArkPath();
-
-            if (string.IsNullOrEmpty(arkBasePath) || !Directory.Exists(arkBasePath))
-            {
-                SetStatus("ARK installation not found. Please ensure ARK is properly installed.", StatusType.Error, true, "ARK path not found");
-                return;
-            }
-
-            string waterFilesPath = Path.Combine(arkBasePath, "ShooterGame", "Content", "PrimalEarth", "Effects", "Textures", "Generic");
-
-            if (!Directory.Exists(waterFilesPath))
-            {
-                SetStatus("Water files directory not found at expected location.", StatusType.Warning, true, waterFilesPath);
-                return;
-            }
-
-            var waterFiles = new[] { "SoftEdgeGradient_Linear.uasset", "SoftEdgeGradient.uasset" };
-            var existingFiles = new List<string>();
-            var missingFiles = new List<string>();
-
-            foreach (string fileName in waterFiles)
-            {
-                string filePath = Path.Combine(waterFilesPath, fileName);
-                if (File.Exists(filePath))
+                if (iniPath == null)
                 {
-                    existingFiles.Add(fileName);
+                    InvokeAsync(() => NotificationService.ShowError("Steam installation not found in registry."));
+                    return;
+                }
+
+                var directory = Path.GetDirectoryName(iniPath);
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory!);
+                }
+
+                File.WriteAllText(iniPath, currentIniContent);
+                InvokeAsync(() => NotificationService.ShowSuccess("INI file saved successfully!"));
+                Logger.LogInformation("INI file saved to: {Path}", iniPath);
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error saving INI file");
+            NotificationService.ShowError($"Error saving INI file: {ex.Message}");
+        }
+    }
+
+    private async Task CheckIniFileExists()
+    {
+        try
+        {
+            Logger.LogInformation("Checking INI file existence");
+
+            // Run file operations on background thread
+            await Task.Run(() =>
+            {
+                string? iniPath = ArkUtilities.GetBaseDeviceProfilesPath();
+
+                if (iniPath == null)
+                {
+                    InvokeAsync(() => NotificationService.ShowError("Steam installation not found in registry. Please ensure Steam is properly installed."));
+                    return;
+                }
+
+                if (!File.Exists(iniPath))
+                {
+                    InvokeAsync(() => NotificationService.ShowWarning($"INI file not found at: {iniPath}"));
+                    Logger.LogWarning("INI file not found at: {Path}", iniPath);
                 }
                 else
                 {
-                    missingFiles.Add(fileName);
-                }
-            }
+                    var fileInfo = new FileInfo(iniPath);
+                    var fileSize = fileInfo.Length;
+                    var lastModified = fileInfo.LastWriteTime;
 
-            if (existingFiles.Count == waterFiles.Length)
-            {
-                SetStatus($"All water surface files found • {existingFiles.Count} files present", StatusType.Success, true, waterFilesPath);
-            }
-            else if (existingFiles.Count > 0)
-            {
-                SetStatus($"Partial water files found • {existingFiles.Count}/{waterFiles.Length} files present", StatusType.Warning, true, waterFilesPath);
-            }
-            else
-            {
-                SetStatus($"No water surface files found • All {waterFiles.Length} files missing (water surface already removed)", StatusType.Info, true, waterFilesPath);
-            }
+                    InvokeAsync(() => NotificationService.ShowSuccess($"INI file found!\nPath: {iniPath}\nSize: {fileSize} bytes\nModified: {lastModified:yyyy-MM-dd HH:mm}"));
+                    Logger.LogInformation("INI file found at: {Path}, Size: {Size} bytes", iniPath, fileSize);
+                }
+            });
         }
         catch (Exception ex)
         {
-            SetStatus($"Error checking water files: {ex.Message}", StatusType.Error);
+            Logger.LogError(ex, "Error checking INI file");
+            NotificationService.ShowError($"Error checking INI file: {ex.Message}");
         }
     }
 
-    private void DeleteWaterSurfaceFiles()
+    private async Task CheckWaterFiles()
     {
         try
         {
-            string? arkBasePath = ArkUtilities.FindArkPath();
+            Logger.LogInformation("Checking water files");
 
-            if (string.IsNullOrEmpty(arkBasePath) || !Directory.Exists(arkBasePath))
+            // Run file operations on background thread
+            await Task.Run(() =>
             {
-                SetStatus("ARK installation not found!", StatusType.Error);
-                StateHasChanged();
-                return;
-            }
+                string? arkBasePath = ArkUtilities.FindArkPath();
 
-            string shooterGamePath = Path.Combine(arkBasePath, "ShooterGame", "Content", "PrimalEarth");
-            int deletedCount = 0;
-
-            var waterSurfaceFiles = new Dictionary<string, string[]>
-            {
-                { Path.Combine(shooterGamePath, "Effects", "Textures", "Generic"), new[] {
-                    "SoftEdgeGradient_Linear.uasset",
-                    "SoftEdgeGradient.uasset"
-                }}
-            };
-
-            foreach (var folder in waterSurfaceFiles)
-            {
-                string folderPath = folder.Key;
-                if (!Directory.Exists(folderPath))
-                    continue;
-
-                foreach (string fileName in folder.Value)
+                if (string.IsNullOrEmpty(arkBasePath) || !Directory.Exists(arkBasePath))
                 {
-                    string filePath = Path.Combine(folderPath, fileName);
+                    InvokeAsync(() => NotificationService.ShowError("ARK installation not found. Please ensure ARK is properly installed."));
+                    return;
+                }
+
+                string waterFilesPath = Path.Combine(arkBasePath, "ShooterGame", "Content", "PrimalEarth", "Effects", "Textures", "Generic");
+
+                if (!Directory.Exists(waterFilesPath))
+                {
+                    InvokeAsync(() => NotificationService.ShowWarning($"Water files directory not found at: {waterFilesPath}"));
+                    return;
+                }
+
+                var waterFiles = new[] { "SoftEdgeGradient_Linear.uasset", "SoftEdgeGradient.uasset" };
+                var existingFiles = new List<string>();
+
+                foreach (string fileName in waterFiles)
+                {
+                    string filePath = Path.Combine(waterFilesPath, fileName);
                     if (File.Exists(filePath))
                     {
-                        File.Delete(filePath);
-                        deletedCount++;
+                        existingFiles.Add(fileName);
                     }
                 }
-            }
 
-            SetStatus($"Successfully deleted {deletedCount} water surface files", StatusType.Success);
-            StateHasChanged();
+                if (existingFiles.Count == waterFiles.Length)
+                {
+                    InvokeAsync(() => NotificationService.ShowSuccess($"All water surface files found ({existingFiles.Count} files)\nPath: {waterFilesPath}"));
+                    Logger.LogInformation("All water files found at: {Path}", waterFilesPath);
+                }
+                else if (existingFiles.Count > 0)
+                {
+                    InvokeAsync(() => NotificationService.ShowWarning($"Partial water files found ({existingFiles.Count}/{waterFiles.Length} files)\nPath: {waterFilesPath}"));
+                    Logger.LogWarning("Partial water files: {Count}/{Total} at {Path}", existingFiles.Count, waterFiles.Length, waterFilesPath);
+                }
+                else
+                {
+                    InvokeAsync(() => NotificationService.ShowInfo($"Water surface already removed (0/{waterFiles.Length} files found)\nPath: {waterFilesPath}"));
+                    Logger.LogInformation("No water files found - already removed");
+                }
+            });
         }
         catch (Exception ex)
         {
-            SetStatus($"Error deleting water surface files: {ex.Message}", StatusType.Error);
-            StateHasChanged();
+            Logger.LogError(ex, "Error checking water files");
+            NotificationService.ShowError($"Error checking water files: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteWaterSurfaceFiles()
+    {
+        try
+        {
+            Logger.LogInformation("Deleting water surface files");
+
+            // Run file operations on background thread
+            await Task.Run(() =>
+            {
+                string? arkBasePath = ArkUtilities.FindArkPath();
+
+                if (string.IsNullOrEmpty(arkBasePath) || !Directory.Exists(arkBasePath))
+                {
+                    InvokeAsync(() => NotificationService.ShowError("ARK installation not found!"));
+                    return;
+                }
+
+                string shooterGamePath = Path.Combine(arkBasePath, "ShooterGame", "Content", "PrimalEarth");
+                int deletedCount = 0;
+
+                var waterSurfaceFiles = new Dictionary<string, string[]>
+                {
+                    { Path.Combine(shooterGamePath, "Effects", "Textures", "Generic"), new[] {
+                        "SoftEdgeGradient_Linear.uasset",
+                        "SoftEdgeGradient.uasset"
+                    }}
+                };
+
+                foreach (var folder in waterSurfaceFiles)
+                {
+                    string folderPath = folder.Key;
+                    if (!Directory.Exists(folderPath))
+                        continue;
+
+                    foreach (string fileName in folder.Value)
+                    {
+                        string filePath = Path.Combine(folderPath, fileName);
+                        if (File.Exists(filePath))
+                        {
+                            File.Delete(filePath);
+                            deletedCount++;
+                            Logger.LogInformation("Deleted water file: {FileName}", fileName);
+                        }
+                    }
+                }
+
+                int count = deletedCount;
+                InvokeAsync(() => NotificationService.ShowSuccess($"Successfully deleted {count} water surface file(s)"));
+                Logger.LogInformation("Deleted {Count} water surface files", deletedCount);
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deleting water surface files");
+            NotificationService.ShowError($"Error deleting water surface files: {ex.Message}");
         }
     }
 

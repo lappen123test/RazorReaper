@@ -1,6 +1,8 @@
 ﻿@page "/paintings"
 @using System.Diagnostics
 @using RazorReaper.Components.Shared
+@using RazorReaper.Services
+@inject INotificationService NotificationService
 
 <div class="app-container">
     <RazorReaper.Components.Shared.SharedNavbar />
@@ -31,13 +33,6 @@
                         Create MyPaintings Folder
                     </button>
                 </div>
-
-                @if (!string.IsNullOrEmpty(statusMessage))
-                {
-                    <div class="mt-3 status-message @GetStatusClass()">
-                        <div style="font-weight: 600;">@statusMessage</div>
-                    </div>
-                }
 
                 @if (!string.IsNullOrEmpty(arkPath))
                 {
@@ -266,7 +261,6 @@
 </style>
 
 @code {
-    private string statusMessage = "";
     private bool folderExists = false;
     private string folderPath = "";
     private string arkPath = "";
@@ -287,8 +281,7 @@
 
             if (arkBasePath == null)
             {
-                statusMessage = "ARK installation not found. Please install ARK or check your installation.";
-                StateHasChanged();
+                NotificationService.ShowError("ARK installation not found. Please install ARK or check your installation.");
                 return;
             }
 
@@ -297,14 +290,13 @@
 
             if (!Directory.Exists(arkPath))
             {
-                statusMessage = "ARK: Survival Evolved not found in Steam directory. Please verify your ARK installation.";
-                StateHasChanged();
+                NotificationService.ShowError("ARK: Survival Evolved not found in Steam directory. Please verify your ARK installation.");
                 return;
             }
 
             if (!Directory.Exists(folderPath))
             {
-                statusMessage = "MyPaintings folder doesn't exist. Create it first or ensure ARK has been launched at least once.";
+                NotificationService.ShowWarning("MyPaintings folder doesn't exist. Create it first or ensure ARK has been launched at least once.");
                 folderExists = false;
                 StateHasChanged();
                 return;
@@ -320,13 +312,12 @@
                 UseShellExecute = true
             });
 
-            statusMessage = $"Opened MyPaintings folder successfully!";
+            NotificationService.ShowSuccess("Opened MyPaintings folder successfully!");
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            statusMessage = $"Error opening folder: {ex.Message}";
-            StateHasChanged();
+            NotificationService.ShowError($"Error opening folder: {ex.Message}");
         }
     }
 
@@ -337,8 +328,7 @@
             string? arkBasePath = ArkUtilities.FindArkPath();
             if (arkBasePath == null)
             {
-                statusMessage = "ARK installation not found. Cannot create MyPaintings folder.";
-                StateHasChanged();
+                NotificationService.ShowError("ARK installation not found. Cannot create MyPaintings folder.");
                 return;
             }
 
@@ -348,8 +338,7 @@
             string arkExePath = Path.Combine(arkBasePath, "ShooterGame", "Binaries", "Win64", "ShooterGame.exe");
             if (!File.Exists(arkExePath))
             {
-                statusMessage = "ShooterGame.exe not found. Is ARK properly installed?";
-                StateHasChanged();
+                NotificationService.ShowError("ShooterGame.exe not found. Is ARK properly installed?");
                 return;
             }
 
@@ -361,14 +350,14 @@
 
             if (Directory.Exists(folderPath))
             {
-                statusMessage = "MyPaintings folder already exists!";
+                NotificationService.ShowWarning("MyPaintings folder already exists!");
                 folderExists = true;
                 CountFiles();
             }
             else
             {
                 Directory.CreateDirectory(folderPath);
-                statusMessage = "MyPaintings folder created successfully!";
+                NotificationService.ShowSuccess("MyPaintings folder created successfully!");
                 folderExists = true;
                 fileCount = 0;
             }
@@ -377,8 +366,7 @@
         }
         catch (Exception ex)
         {
-            statusMessage = $"Error creating folder: {ex.Message}";
-            StateHasChanged();
+            NotificationService.ShowError($"Error creating folder: {ex.Message}");
         }
     }
 
@@ -447,13 +435,12 @@
                 FileName = canvasUrl,
                 UseShellExecute = true
             });
-            statusMessage = "Opening Canvas download page...";
+            NotificationService.ShowSuccess("Opening Canvas download page...");
         }
         catch (Exception ex)
         {
-            statusMessage = $"Error opening website: {ex.Message}";
+            NotificationService.ShowError($"Error opening website: {ex.Message}");
         }
-        StateHasChanged();
     }
 
     private void OpenArkCanvasMaker()
@@ -466,29 +453,17 @@
                 FileName = arkCanvasUrl,
                 UseShellExecute = true
             });
-            statusMessage = "Opening ARK Canvas Maker download page...";
+            NotificationService.ShowSuccess("Opening ARK Canvas Maker download page...");
         }
         catch (Exception ex)
         {
-            statusMessage = $"Error opening ARK Canvas Maker: {ex.Message}";
+            NotificationService.ShowError($"Error opening ARK Canvas Maker: {ex.Message}");
         }
-        StateHasChanged();
     }
 
     private void ShowArkCanvasInfo()
     {
         showArkInfo = !showArkInfo;
-        statusMessage = showArkInfo ? "Showing ARK Canvas setup guide" : "ARK Canvas guide hidden";
-        StateHasChanged();
-    }
-
-    private string GetStatusClass()
-    {
-        if (statusMessage.Contains("Error") || statusMessage.Contains("not found") || statusMessage.Contains("doesn't exist"))
-            return "status-error";
-        else if (statusMessage.Contains("exists") || statusMessage.Contains("already"))
-            return "status-warning";
-        else
-            return "status-success";
+        NotificationService.ShowInfo(showArkInfo ? "Showing ARK Canvas setup guide" : "ARK Canvas guide hidden");
     }
 }

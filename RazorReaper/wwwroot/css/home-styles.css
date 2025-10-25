@@ -121,6 +121,99 @@
     gap: 1rem;
 }
 
+.weather-icon-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.weather-icon {
+    width: 80px;
+    height: 80px;
+    filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.3));
+}
+
+/* Sunny animation */
+.weather-icon.sunny .sun {
+    animation: sun-pulse 2s ease-in-out infinite;
+}
+
+.weather-icon.sunny .sun-rays line {
+    animation: sun-rays-rotate 3s linear infinite;
+}
+
+@keyframes sun-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.9; }
+}
+
+@keyframes sun-rays-rotate {
+    0% { opacity: 1; }
+    50% { opacity: 0.6; }
+    100% { opacity: 1; }
+}
+
+/* Cloudy animation */
+.weather-icon.cloudy .cloud-1 {
+    animation: cloud-float 4s ease-in-out infinite;
+}
+
+.weather-icon.cloudy .cloud-2 {
+    animation: cloud-float 3s ease-in-out infinite 0.5s;
+}
+
+.weather-icon.cloudy .cloud-3 {
+    animation: cloud-float 3.5s ease-in-out infinite 1s;
+}
+
+@keyframes cloud-float {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(5px); }
+}
+
+/* Rainy animation */
+.weather-icon.rainy .rain-drop {
+    animation: rain-fall 1s ease-in infinite;
+}
+
+@keyframes rain-fall {
+    0% { transform: translateY(0); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translateY(30px); opacity: 0; }
+}
+
+/* Snowy animation */
+.weather-icon.snowy .snowflake {
+    animation: snow-fall 3s ease-in-out infinite;
+}
+
+@keyframes snow-fall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translateY(40px) rotate(180deg); opacity: 0; }
+}
+
+/* Stormy animation */
+.weather-icon.stormy .lightning {
+    animation: lightning-flash 2s ease-in-out infinite;
+}
+
+@keyframes lightning-flash {
+    0%, 45%, 55%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+}
+
+/* Foggy animation */
+.weather-icon.foggy .fog-line {
+    animation: fog-drift 4s ease-in-out infinite;
+}
+
+@keyframes fog-drift {
+    0%, 100% { transform: translateX(0); opacity: 0.5; }
+    50% { transform: translateX(10px); opacity: 0.8; }
+}
+
 .weather-main {
     text-align: center;
 }
@@ -164,9 +257,22 @@
     font-weight: 600;
 }
 
-.weather-loading, .weather-error {
+.weather-loading, .weather-error, .weather-error-simple {
     text-align: center;
     padding: 2rem 0;
+}
+
+.weather-error-simple {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+}
+
+.weather-error-simple p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin: 0;
 }
 
 .spinner {
@@ -310,6 +416,67 @@
     gap: 1.25rem;
 }
 
+/* WiFi widget styles */
+.wifi-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.wifi-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.wifi-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.wifi-value {
+    font-size: 1rem;
+    color: var(--text-primary);
+    font-weight: 600;
+    word-break: break-word;
+}
+
+/* Hardware widget styles */
+.hardware-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.hardware-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.hardware-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.hardware-value {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    word-break: break-word;
+    line-height: 1.4;
+}
+
 .resource-item {
     display: flex;
     flex-direction: column;
@@ -368,6 +535,11 @@
 .resource-fill.cpu {
     background: linear-gradient(90deg, #8b5cf6, #6d28d9);
     box-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
+}
+
+.resource-fill.gpu {
+    background: linear-gradient(90deg, #a78bfa, #7c3aed);
+    box-shadow: 0 0 15px rgba(167, 139, 250, 0.5);
 }
 
 .resource-fill.ram {
@@ -504,7 +676,7 @@
     display: flex;
     gap: 1.5rem;
     padding: 2rem;
-    background: rgba(0, 0, 0, 0.1) !important; 
+    background: rgba(0, 0, 0, 0.1) !important;
     border: 1px solid var(--border-color);
     border-radius: 16px;
     text-decoration: none;

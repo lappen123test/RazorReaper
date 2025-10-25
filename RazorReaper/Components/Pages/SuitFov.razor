@@ -2,6 +2,8 @@
 @using System.IO
 @using System.Text.RegularExpressions
 @using RazorReaper.Components.Shared
+@using RazorReaper.Services
+@inject INotificationService NotificationService
 
 <div class="app-container">
     <RazorReaper.Components.Shared.SharedNavbar />
@@ -78,15 +80,6 @@
                             </button>
                         }
                     </div>
-
-                    @if (!string.IsNullOrEmpty(statusMessage))
-                    {
-                        <div class="fov-status-message @GetStatusClass()">
-                            <div class="status-content-fov">
-                                @statusMessage
-                            </div>
-                        </div>
-                    }
                 </div>
 
                 <div class="content-card">
@@ -174,19 +167,9 @@
 </div>
 
 @code {
-    private string statusMessage = "";
     private string gameUserSettingsPath = "";
     private bool bUseOldThirdPersonCameraTrace = false;
     private bool bUseOldThirdPersonCameraOffset = false;
-    private StatusType currentStatusType = StatusType.Info;
-
-    private enum StatusType
-    {
-        Success,
-        Error,
-        Warning,
-        Info
-    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -201,7 +184,7 @@
             string? arkPath = ArkUtilities.FindArkPath();
             if (string.IsNullOrEmpty(arkPath))
             {
-                SetStatus("❌ ARK installation not found. Please ensure ARK is installed.", StatusType.Error);
+                NotificationService.ShowError("ARK installation not found. Please ensure ARK is installed.");
                 return;
             }
 
@@ -209,7 +192,7 @@
 
             if (!File.Exists(gameUserSettingsPath))
             {
-                SetStatus("⚠️ GameUserSettings.ini not found. Launch ARK once to create it.", StatusType.Warning);
+                NotificationService.ShowWarning("GameUserSettings.ini not found. Launch ARK once to create it.");
                 return;
             }
 
@@ -217,7 +200,7 @@
         }
         catch (Exception ex)
         {
-            SetStatus($"❌ Error: {ex.Message}", StatusType.Error);
+            NotificationService.ShowError($"Error: {ex.Message}");
         }
     }
 
@@ -247,7 +230,7 @@
         }
     }
 
-    private void EnableCameraTrace()
+    private async Task EnableCameraTrace()
     {
         try
         {
@@ -256,69 +239,77 @@
                 CheckFileAndReadSettings();
             }
 
-            if (!File.Exists(gameUserSettingsPath))
+            // Run file operations on background thread to prevent UI freezing
+            await Task.Run(() =>
             {
-                SetStatus("❌ GameUserSettings.ini file not found.", StatusType.Error);
-                return;
-            }
-
-            string content = File.ReadAllText(gameUserSettingsPath);
-            bool modified = false;
-
-            var tracePattern = @"bUseOldThirdPersonCameraTrace=\w+";
-            if (Regex.IsMatch(content, tracePattern, RegexOptions.IgnoreCase))
-            {
-                content = Regex.Replace(content, tracePattern, "bUseOldThirdPersonCameraTrace=True", RegexOptions.IgnoreCase);
-                modified = true;
-            }
-            else
-            {
-                if (content.Contains("[/Script/ShooterGame.ShooterGameUserSettings]"))
+                if (!File.Exists(gameUserSettingsPath))
                 {
-                    content = content.Replace("[/Script/ShooterGame.ShooterGameUserSettings]",
-                        "[/Script/ShooterGame.ShooterGameUserSettings]\r\nbUseOldThirdPersonCameraTrace=True");
+                    InvokeAsync(() => NotificationService.ShowError("GameUserSettings.ini file not found."));
+                    return;
+                }
+
+                string content = File.ReadAllText(gameUserSettingsPath);
+                bool modified = false;
+
+                var tracePattern = @"bUseOldThirdPersonCameraTrace=\w+";
+                if (Regex.IsMatch(content, tracePattern, RegexOptions.IgnoreCase))
+                {
+                    content = Regex.Replace(content, tracePattern, "bUseOldThirdPersonCameraTrace=True", RegexOptions.IgnoreCase);
                     modified = true;
                 }
-            }
-
-            var offsetPattern = @"bUseOldThirdPersonCameraOffset=\w+";
-            if (Regex.IsMatch(content, offsetPattern, RegexOptions.IgnoreCase))
-            {
-                content = Regex.Replace(content, offsetPattern, "bUseOldThirdPersonCameraOffset=True", RegexOptions.IgnoreCase);
-                modified = true;
-            }
-            else
-            {
-                if (content.Contains("[/Script/ShooterGame.ShooterGameUserSettings]"))
+                else
                 {
-                    if (content.Contains("bUseOldThirdPersonCameraTrace=True") && !content.Contains("bUseOldThirdPersonCameraOffset"))
+                    if (content.Contains("[/Script/ShooterGame.ShooterGameUserSettings]"))
                     {
-                        content = content.Replace("bUseOldThirdPersonCameraTrace=True",
-                            "bUseOldThirdPersonCameraTrace=True\r\nbUseOldThirdPersonCameraOffset=True");
+                        content = content.Replace("[/Script/ShooterGame.ShooterGameUserSettings]",
+                            "[/Script/ShooterGame.ShooterGameUserSettings]\r\nbUseOldThirdPersonCameraTrace=True");
                         modified = true;
                     }
                 }
-            }
 
-            if (modified)
-            {
-                File.WriteAllText(gameUserSettingsPath, content);
-                bUseOldThirdPersonCameraTrace = true;
-                bUseOldThirdPersonCameraOffset = true;
-                SetStatus("✅ Camera Trace enabled! Restart ARK to apply changes.", StatusType.Success);
-            }
-            else
-            {
-                SetStatus("⚠️ Could not find settings section. Please verify your GameUserSettings.ini file.", StatusType.Warning);
-            }
+                var offsetPattern = @"bUseOldThirdPersonCameraOffset=\w+";
+                if (Regex.IsMatch(content, offsetPattern, RegexOptions.IgnoreCase))
+                {
+                    content = Regex.Replace(content, offsetPattern, "bUseOldThirdPersonCameraOffset=True", RegexOptions.IgnoreCase);
+                    modified = true;
+                }
+                else
+                {
+                    if (content.Contains("[/Script/ShooterGame.ShooterGameUserSettings]"))
+                    {
+                        if (content.Contains("bUseOldThirdPersonCameraTrace=True") && !content.Contains("bUseOldThirdPersonCameraOffset"))
+                        {
+                            content = content.Replace("bUseOldThirdPersonCameraTrace=True",
+                                "bUseOldThirdPersonCameraTrace=True\r\nbUseOldThirdPersonCameraOffset=True");
+                            modified = true;
+                        }
+                    }
+                }
+
+                if (modified)
+                {
+                    File.WriteAllText(gameUserSettingsPath, content);
+                    InvokeAsync(() =>
+                    {
+                        bUseOldThirdPersonCameraTrace = true;
+                        bUseOldThirdPersonCameraOffset = true;
+                        NotificationService.ShowSuccess("Camera Trace enabled! Restart ARK to apply changes.");
+                        StateHasChanged();
+                    });
+                }
+                else
+                {
+                    InvokeAsync(() => NotificationService.ShowWarning("Could not find settings section. Please verify your GameUserSettings.ini file."));
+                }
+            });
         }
         catch (Exception ex)
         {
-            SetStatus($"❌ Error: {ex.Message}", StatusType.Error);
+            NotificationService.ShowError($"Error: {ex.Message}");
         }
     }
 
-    private void DisableCameraTrace()
+    private async Task DisableCameraTrace()
     {
         try
         {
@@ -327,46 +318,35 @@
                 CheckFileAndReadSettings();
             }
 
-            if (!File.Exists(gameUserSettingsPath))
+            // Run file operations on background thread to prevent UI freezing
+            await Task.Run(() =>
             {
-                SetStatus("❌ GameUserSettings.ini file not found.", StatusType.Error);
-                return;
-            }
+                if (!File.Exists(gameUserSettingsPath))
+                {
+                    InvokeAsync(() => NotificationService.ShowError("GameUserSettings.ini file not found."));
+                    return;
+                }
 
-            string content = File.ReadAllText(gameUserSettingsPath);
-            
-            content = Regex.Replace(content, @"bUseOldThirdPersonCameraTrace=\w+", 
-                                   "bUseOldThirdPersonCameraTrace=False", RegexOptions.IgnoreCase);
-            content = Regex.Replace(content, @"bUseOldThirdPersonCameraOffset=\w+", 
-                                   "bUseOldThirdPersonCameraOffset=False", RegexOptions.IgnoreCase);
+                string content = File.ReadAllText(gameUserSettingsPath);
 
-            File.WriteAllText(gameUserSettingsPath, content);
-            bUseOldThirdPersonCameraTrace = false;
-            bUseOldThirdPersonCameraOffset = false;
-            SetStatus("❌ Camera Trace disabled. Restart ARK to apply changes.", StatusType.Warning);
+                content = Regex.Replace(content, @"bUseOldThirdPersonCameraTrace=\w+",
+                                       "bUseOldThirdPersonCameraTrace=False", RegexOptions.IgnoreCase);
+                content = Regex.Replace(content, @"bUseOldThirdPersonCameraOffset=\w+",
+                                       "bUseOldThirdPersonCameraOffset=False", RegexOptions.IgnoreCase);
+
+                File.WriteAllText(gameUserSettingsPath, content);
+                InvokeAsync(() =>
+                {
+                    bUseOldThirdPersonCameraTrace = false;
+                    bUseOldThirdPersonCameraOffset = false;
+                    NotificationService.ShowWarning("Camera Trace disabled. Restart ARK to apply changes.");
+                    StateHasChanged();
+                });
+            });
         }
         catch (Exception ex)
         {
-            SetStatus($"❌ Error: {ex.Message}", StatusType.Error);
+            NotificationService.ShowError($"Error: {ex.Message}");
         }
-    }
-
-    private void SetStatus(string message, StatusType type)
-    {
-        statusMessage = message;
-        currentStatusType = type;
-        StateHasChanged();
-    }
-
-    private string GetStatusClass()
-    {
-        return currentStatusType switch
-        {
-            StatusType.Success => "status-success-fov",
-            StatusType.Error => "status-error-fov",
-            StatusType.Warning => "status-warning-fov",
-            StatusType.Info => "status-info-fov",
-            _ => "status-info-fov"
-        };
     }
 }

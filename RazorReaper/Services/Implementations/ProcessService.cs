@@ -55,10 +55,20 @@ public class ProcessService : IProcessService
         try
         {
             _logger.LogInformation("Starting process: {FilePath}", filePath);
-            var process = Process.Start(filePath);
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = filePath,
+                UseShellExecute = true // Required for steam:// and other URI protocols
+            };
+
+            var process = Process.Start(startInfo);
             if (process == null)
             {
-                throw new InvalidOperationException($"Failed to start process: {filePath}");
+                _logger.LogWarning("Process.Start returned null for: {FilePath}", filePath);
+                // For URI protocols (steam://), Process.Start may return null but still work
+                // Return a dummy process to indicate success
+                return Process.GetCurrentProcess();
             }
             return process;
         }

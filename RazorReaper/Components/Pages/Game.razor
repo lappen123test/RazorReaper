@@ -1,5 +1,6 @@
 ﻿@page "/game"
 @using System.Diagnostics
+@using System.IO
 @using System.Runtime.InteropServices
 @using Microsoft.JSInterop
 @using Microsoft.Extensions.Logging
@@ -10,8 +11,10 @@
 
 @inject IJSRuntime JSRuntime
 @inject IProcessService ProcessService
+@inject IArkPathProvider ArkPathProvider
 @inject IOptions<AppConfiguration> Configuration
 @inject ILogger<Game> Logger
+@inject INotificationService NotificationService
 
 @implements IAsyncDisposable
 
@@ -38,6 +41,7 @@
             </div>
 
             <div class="content-card">
+                <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Game Controls</h3>
                 <div class="game-actions">
                     <button class="game-btn primary" @onclick="LaunchGame" disabled="@isGameRunning">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -76,6 +80,19 @@
                             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                         </svg>
                         debugstructures
+                    </button>
+                </div>
+            </div>
+
+            <div class="content-card">
+                <h3 style="margin-bottom: 1rem; color: var(--text-primary);">ARK Installation</h3>
+                <div class="game-actions">
+                    <button class="game-btn info" @onclick="CheckPaths">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 11l3 3L22 4" />
+                            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+                        </svg>
+                        Check Paths
                     </button>
                 </div>
             </div>
@@ -146,11 +163,12 @@
     {
         CheckGameStatus();
 
+        // Check game status every 10 seconds to reduce CPU usage
         statusTimer = new Timer(async _ =>
         {
             CheckGameStatus();
             await InvokeAsync(StateHasChanged);
-        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(10));
     }
 
     private void CheckGameStatus()
@@ -215,16 +233,18 @@
                 keybd_event((byte)VK_RETURN, 0, 0, UIntPtr.Zero);
                 await Task.Delay(50);
                 keybd_event((byte)VK_RETURN, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+
+                NotificationService.ShowSuccess($"Command '{command}' executed successfully");
             }
             else
             {
-                await JSRuntime.InvokeVoidAsync("alert", "ARK: Survival Evolved is not running!");
+                NotificationService.ShowWarning("ARK: Survival Evolved is not running!");
             }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error executing game command: {Command}", command);
-            await JSRuntime.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+            NotificationService.ShowError($"Error executing command: {ex.Message}");
         }
 
         StateHasChanged();
@@ -243,6 +263,7 @@
         {
             Logger.LogInformation("Launching ARK via Steam");
             ProcessService.Start("steam://rungameid/346110");
+            NotificationService.ShowSuccess("Launching ARK: Survival Evolved via Steam...");
 
             await Task.Delay(5000);
             CheckGameStatus();
@@ -250,7 +271,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error launching game");
-            await JSRuntime.InvokeVoidAsync("alert", $"Error launching game: {ex.Message}");
+            NotificationService.ShowError($"Error launching game: {ex.Message}");
         }
 
         StateHasChanged();
@@ -270,14 +291,67 @@
             }
 
             CheckGameStatus();
+            NotificationService.ShowSuccess("ARK: Survival Evolved closed successfully");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error closing game");
-            await JSRuntime.InvokeVoidAsync("alert", $"Error closing game: {ex.Message}");
+            NotificationService.ShowError($"Error closing game: {ex.Message}");
         }
 
         StateHasChanged();
+    }
+
+    private async Task CheckPaths()
+    {
+        try
+        {
+            Logger.LogInformation("Checking ARK installation paths");
+
+            // Run path checking on background thread to prevent UI freezing/crashing
+            await Task.Run(() =>
+            {
+                try
+                {
+                    var arkPath = ArkPathProvider.FindArkPath();
+                    var configPath = ArkPathProvider.GetBaseDeviceProfilesPath();
+
+                    bool arkExists = !string.IsNullOrEmpty(arkPath) && Directory.Exists(arkPath);
+                    bool configExists = !string.IsNullOrEmpty(configPath) && File.Exists(configPath);
+
+                    if (arkExists && configExists)
+                    {
+                        InvokeAsync(() => NotificationService.ShowSuccess($"ARK paths verified successfully!\nInstall: {arkPath}\nConfig: {configPath}"));
+                        Logger.LogInformation("ARK paths verified: Install={ArkPath}, Config={ConfigPath}", arkPath, configPath);
+                    }
+                    else
+                    {
+                        var issues = new List<string>();
+                        if (!arkExists)
+                        {
+                            issues.Add($"Installation path not found: {arkPath ?? "null"}");
+                        }
+                        if (!configExists)
+                        {
+                            issues.Add($"Config file not found: {configPath ?? "null"}");
+                        }
+
+                        InvokeAsync(() => NotificationService.ShowError($"ARK path verification failed:\n{string.Join("\n", issues)}"));
+                        Logger.LogWarning("ARK paths verification failed: {Issues}", string.Join(", ", issues));
+                    }
+                }
+                catch (Exception innerEx)
+                {
+                    Logger.LogError(innerEx, "Error in path checking background task");
+                    InvokeAsync(() => NotificationService.ShowError($"Error checking paths: {innerEx.Message}"));
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error checking ARK paths");
+            NotificationService.ShowError($"Error checking paths: {ex.Message}");
+        }
     }
 
     public async ValueTask DisposeAsync()

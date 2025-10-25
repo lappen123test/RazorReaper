@@ -39,7 +39,7 @@ public class WeatherService : IWeatherService
             _logger.LogInformation("Fetching weather data for city: {City}", city);
 
             var httpClient = _httpClientFactory.CreateClient();
-            httpClient.Timeout = TimeSpan.FromSeconds(15);
+            httpClient.Timeout = TimeSpan.FromSeconds(30);
 
             // Try primary API (ipapi.co + open-meteo)
             try
@@ -53,38 +53,76 @@ public class WeatherService : IWeatherService
             }
             catch (HttpRequestException ex)
             {
-                _logger.LogWarning(ex, "Primary weather API failed with HTTP error, trying fallback");
+                _logger.LogWarning(ex, "Primary weather API failed with HTTP error, trying fallback 1");
             }
             catch (JsonException ex)
             {
-                _logger.LogWarning(ex, "Failed to parse primary weather API response, trying fallback");
+                _logger.LogWarning(ex, "Failed to parse primary weather API response, trying fallback 1");
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Primary weather API failed, trying fallback");
+                _logger.LogWarning(ex, "Primary weather API failed, trying fallback 1");
             }
 
-            // Try fallback API (ipinfo.io + open-meteo)
+            // Try fallback API 1 (ipinfo.io + open-meteo)
             try
             {
                 var weatherData = await FetchWeatherWithFallbackApi(httpClient);
                 if (weatherData != null)
                 {
-                    _logger.LogInformation("Successfully fetched weather data using fallback API");
+                    _logger.LogInformation("Successfully fetched weather data using fallback API 1");
                     return weatherData;
                 }
             }
             catch (HttpRequestException ex)
             {
-                _logger.LogError(ex, "Fallback weather API failed with HTTP error");
+                _logger.LogWarning(ex, "Fallback weather API 1 failed with HTTP error, trying fallback 2");
             }
             catch (JsonException ex)
             {
-                _logger.LogError(ex, "Failed to parse fallback weather API response");
+                _logger.LogWarning(ex, "Failed to parse fallback weather API 1 response, trying fallback 2");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fallback weather API failed");
+                _logger.LogWarning(ex, "Fallback weather API 1 failed, trying fallback 2");
+            }
+
+            // Try fallback API 2 (ip-api.com + open-meteo)
+            try
+            {
+                var weatherData = await FetchWeatherWithSecondFallbackApi(httpClient);
+                if (weatherData != null)
+                {
+                    _logger.LogInformation("Successfully fetched weather data using fallback API 2");
+                    return weatherData;
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogWarning(ex, "Fallback weather API 2 failed with HTTP error, trying final fallback");
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogWarning(ex, "Failed to parse fallback weather API 2 response, trying final fallback");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Fallback weather API 2 failed, trying final fallback");
+            }
+
+            // Try final fallback API (wttr.in - simple and reliable)
+            try
+            {
+                var weatherData = await FetchWeatherWithWttrIn(httpClient);
+                if (weatherData != null)
+                {
+                    _logger.LogInformation("Successfully fetched weather data using wttr.in fallback");
+                    return weatherData;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Final fallback API (wttr.in) failed");
             }
 
             _logger.LogError("All weather APIs failed");
@@ -99,18 +137,28 @@ public class WeatherService : IWeatherService
 
     private async Task<WeatherData?> FetchWeatherWithPrimaryApi(HttpClient httpClient)
     {
-        _logger.LogDebug("Fetching location from ipapi.co");
-        var ipResponse = await httpClient.GetStringAsync("https://ipapi.co/json/");
-        var ipData = JsonDocument.Parse(ipResponse);
+        try
+        {
+            _logger.LogDebug("Fetching location from ipapi.co");
+            var ipResponse = await httpClient.GetStringAsync("https://ipapi.co/json/");
+            _logger.LogDebug("IP API Response: {Response}", ipResponse.Substring(0, Math.Min(200, ipResponse.Length)));
 
-        var lat = ipData.RootElement.GetProperty("latitude").GetDouble();
-        var lon = ipData.RootElement.GetProperty("longitude").GetDouble();
-        var city = ipData.RootElement.GetProperty("city").GetString() ?? "Unknown";
-        var country = ipData.RootElement.GetProperty("country_name").GetString() ?? "Unknown";
+            var ipData = JsonDocument.Parse(ipResponse);
 
-        _logger.LogDebug("Location: {City}, {Country} ({Lat}, {Lon})", city, country, lat, lon);
+            var lat = ipData.RootElement.GetProperty("latitude").GetDouble();
+            var lon = ipData.RootElement.GetProperty("longitude").GetDouble();
+            var city = ipData.RootElement.GetProperty("city").GetString() ?? "Unknown";
+            var country = ipData.RootElement.GetProperty("country_name").GetString() ?? "Unknown";
 
-        return await FetchWeatherFromOpenMeteo(httpClient, lat, lon, city, country);
+            _logger.LogInformation("Location detected: {City}, {Country} ({Lat}, {Lon})", city, country, lat, lon);
+
+            return await FetchWeatherFromOpenMeteo(httpClient, lat, lon, city, country);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Primary API failed: {Message}", ex.Message);
+            throw;
+        }
     }
 
     private async Task<WeatherData?> FetchWeatherWithFallbackApi(HttpClient httpClient)
@@ -134,6 +182,59 @@ public class WeatherService : IWeatherService
         _logger.LogDebug("Fallback location: {City}, {Country} ({Lat}, {Lon})", city, country, lat, lon);
 
         return await FetchWeatherFromOpenMeteo(httpClient, lat, lon, city, country);
+    }
+
+    private async Task<WeatherData?> FetchWeatherWithSecondFallbackApi(HttpClient httpClient)
+    {
+        _logger.LogDebug("Fetching location from ip-api.com (second fallback)");
+        var secondFallbackResponse = await httpClient.GetStringAsync("http://ip-api.com/json/");
+        var secondFallbackData = JsonDocument.Parse(secondFallbackResponse);
+
+        var lat = secondFallbackData.RootElement.GetProperty("lat").GetDouble();
+        var lon = secondFallbackData.RootElement.GetProperty("lon").GetDouble();
+        var city = secondFallbackData.RootElement.GetProperty("city").GetString() ?? "Unknown";
+        var country = secondFallbackData.RootElement.GetProperty("country").GetString() ?? "Unknown";
+
+        _logger.LogDebug("Second fallback location: {City}, {Country} ({Lat}, {Lon})", city, country, lat, lon);
+
+        return await FetchWeatherFromOpenMeteo(httpClient, lat, lon, city, country);
+    }
+
+    private async Task<WeatherData?> FetchWeatherWithWttrIn(HttpClient httpClient)
+    {
+        try
+        {
+            _logger.LogDebug("Fetching weather from wttr.in (final fallback)");
+
+            // wttr.in provides automatic location detection and simple JSON format
+            var response = await httpClient.GetStringAsync("https://wttr.in/?format=j1");
+            var data = JsonDocument.Parse(response);
+
+            var currentCondition = data.RootElement.GetProperty("current_condition")[0];
+            var nearestArea = data.RootElement.GetProperty("nearest_area")[0];
+
+            var temp = int.Parse(currentCondition.GetProperty("temp_C").GetString() ?? "0");
+            var feelsLike = int.Parse(currentCondition.GetProperty("FeelsLikeC").GetString() ?? "0");
+            var condition = currentCondition.GetProperty("weatherDesc")[0].GetProperty("value").GetString() ?? "Unknown";
+            var city = nearestArea.GetProperty("areaName")[0].GetProperty("value").GetString() ?? "Unknown";
+            var country = nearestArea.GetProperty("country")[0].GetProperty("value").GetString() ?? "Unknown";
+
+            _logger.LogInformation("Weather from wttr.in: {Temp}°C, {Condition} in {City}, {Country}", temp, condition, city, country);
+
+            return new WeatherData
+            {
+                Temperature = temp,
+                FeelsLike = feelsLike,
+                Condition = condition,
+                City = city,
+                Country = country
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "wttr.in fallback failed: {Message}", ex.Message);
+            throw;
+        }
     }
 
     private async Task<WeatherData?> FetchWeatherFromOpenMeteo(
