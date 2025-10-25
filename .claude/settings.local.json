@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(dotnet build:*)",
-      "Bash(dotnet restore:*)"
+      "Bash(dotnet restore:*)",
+      "Bash(ls:*)",
+      "Bash(dotnet clean:*)",
+      "Bash(powershell -Command \"(Get-Content ''''Components\\Pages\\IniChanger.razor'''' -Raw) -match ''''(?s)private List<IniPreset> iniPresets = new List<IniPreset>\\s*{(.*?)\\s*};'''' | Out-Null; $matches[1]\")",
+      "Bash(Out-File -FilePath \"C:\\Users\\cedri\\source\\repos\\CedrickGD\\RazorReaper\\presetsdata.txt\" -Encoding utf8)"
     ],
     "deny": [],
     "ask": []

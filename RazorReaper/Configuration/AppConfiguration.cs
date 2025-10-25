@@ -1,0 +1,116 @@
+namespace RazorReaper.Configuration;
+
+/// <summary>
+/// Centralized configuration class for the RazorReaper application.
+/// </summary>
+public class AppConfiguration
+{
+    /// <summary>
+    /// Weather service configuration.
+    /// </summary>
+    public WeatherSettings Weather { get; set; } = new();
+
+    /// <summary>
+    /// System monitoring configuration.
+    /// </summary>
+    public MonitoringSettings Monitoring { get; set; } = new();
+
+    /// <summary>
+    /// ARK game configuration.
+    /// </summary>
+    public ArkSettings Ark { get; set; } = new();
+
+    /// <summary>
+    /// Autoclicker configuration.
+    /// </summary>
+    public AutoclickerSettings Autoclicker { get; set; } = new();
+}
+
+/// <summary>
+/// Weather service settings.
+/// </summary>
+public class WeatherSettings
+{
+    /// <summary>
+    /// Weather data refresh interval in milliseconds. Default: 30 minutes (1800000ms).
+    /// </summary>
+    public int RefreshInterval { get; set; } = 1800000;
+
+    /// <summary>
+    /// Primary weather API endpoint.
+    /// </summary>
+    public string PrimaryApiUrl { get; set; } = "https://api.openweathermap.org/data/2.5/weather";
+
+    /// <summary>
+    /// Secondary weather API endpoint (fallback).
+    /// </summary>
+    public string SecondaryApiUrl { get; set; } = "https://wttr.in";
+
+    /// <summary>
+    /// Default city for weather information.
+    /// </summary>
+    public string DefaultCity { get; set; } = "London";
+}
+
+/// <summary>
+/// System monitoring settings.
+/// </summary>
+public class MonitoringSettings
+{
+    /// <summary>
+    /// Resource monitoring update interval in milliseconds. Default: 2 seconds (2000ms).
+    /// </summary>
+    public int ResourceUpdateInterval { get; set; } = 2000;
+
+    /// <summary>
+    /// Statistics update interval in milliseconds. Default: 5 seconds (5000ms).
+    /// </summary>
+    public int StatisticsUpdateInterval { get; set; } = 5000;
+
+    /// <summary>
+    /// Maximum number of recent activities to keep in memory.
+    /// </summary>
+    public int MaxRecentActivities { get; set; } = 50;
+}
+
+/// <summary>
+/// ARK game settings.
+/// </summary>
+public class ArkSettings
+{
+    /// <summary>
+    /// Name of the ARK game process.
+    /// </summary>
+    public string GameProcessName { get; set; } = "ShooterGame";
+
+    /// <summary>
+    /// Path to the BaseDeviceProfiles.ini file relative to ARK installation.
+    /// </summary>
+    public string ConfigRelativePath { get; set; } = @"Engine\Config\BaseDeviceProfiles.ini";
+
+    /// <summary>
+    /// Path to the game executable relative to ARK installation.
+    /// </summary>
+    public string ExecutableRelativePath { get; set; } = @"ShooterGame\Binaries\Win64\ShooterGame.exe";
+}
+
+/// <summary>
+/// Autoclicker settings.
+/// </summary>
+public class AutoclickerSettings
+{
+    /// <summary>
+    /// Maximum number of click history items to keep. Default: 10,000.
+    /// </summary>
+    public int MaxClickHistory { get; set; } = 10000;
+
+    /// <summary>
+    /// Default click delay in milliseconds.
+    /// </summary>
+    public int DefaultClickDelay { get; set; } = 100;
+
+    /// <summary>
+    /// Hotkey monitoring interval in milliseconds.
+    /// </summary>
+    public int HotkeyMonitorInterval { get; set; } = 50;
+}

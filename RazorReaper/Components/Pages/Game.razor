@@ -2,9 +2,18 @@
 @using System.Diagnostics
 @using System.Runtime.InteropServices
 @using Microsoft.JSInterop
+@using Microsoft.Extensions.Logging
+@using Microsoft.Extensions.Options
 @using RazorReaper.Components.Shared
+@using RazorReaper.Services
+@using RazorReaper.Configuration
 
 @inject IJSRuntime JSRuntime
+@inject IProcessService ProcessService
+@inject IOptions<AppConfiguration> Configuration
+@inject ILogger<Game> Logger
+
+@implements IAsyncDisposable
 
 <div class="app-container game-page-container">
     <RazorReaper.Components.Shared.SharedNavbar />
@@ -146,8 +155,17 @@
 
     private void CheckGameStatus()
     {
-        Process[] processes = Process.GetProcessesByName("ShooterGame");
-        isGameRunning = processes.Length > 0;
+        try
+        {
+            var processName = Configuration.Value.Ark.GameProcessName;
+            isGameRunning = ProcessService.IsProcessRunning(processName);
+            Logger.LogDebug("Game status checked: {IsRunning}", isGameRunning);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error checking game status");
+            isGameRunning = false;
+        }
     }
 
     private async Task ExecuteReconnect()
@@ -169,7 +187,9 @@
     {
         try
         {
-            Process[] processes = Process.GetProcessesByName("ShooterGame");
+            Logger.LogInformation("Executing game command: {Command}", command);
+            var processName = Configuration.Value.Ark.GameProcessName;
+            Process[] processes = ProcessService.GetProcessesByName(processName);
             if (processes.Length > 0)
             {
                 IntPtr gameWindowHandle = processes[0].MainWindowHandle;
@@ -203,6 +223,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Error executing game command: {Command}", command);
             await JSRuntime.InvokeVoidAsync("alert", $"Error: {ex.Message}");
         }
 
@@ -220,17 +241,15 @@
     {
         try
         {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = "steam://rungameid/346110",
-                UseShellExecute = true
-            });
+            Logger.LogInformation("Launching ARK via Steam");
+            ProcessService.Start("steam://rungameid/346110");
 
             await Task.Delay(5000);
             CheckGameStatus();
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Error launching game");
             await JSRuntime.InvokeVoidAsync("alert", $"Error launching game: {ex.Message}");
         }
 
@@ -241,10 +260,12 @@
     {
         try
         {
-            Process[] processes = Process.GetProcessesByName("ShooterGame");
+            Logger.LogInformation("Closing ARK");
+            var processName = Configuration.Value.Ark.GameProcessName;
+            Process[] processes = ProcessService.GetProcessesByName(processName);
             foreach (var process in processes)
             {
-                process.Kill();
+                ProcessService.Kill(process);
                 process.WaitForExit(5000);
             }
 
@@ -252,14 +273,18 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Error closing game");
             await JSRuntime.InvokeVoidAsync("alert", $"Error closing game: {ex.Message}");
         }
 
         StateHasChanged();
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
-        statusTimer?.Dispose();
+        if (statusTimer != null)
+        {
+            await statusTimer.DisposeAsync();
+        }
     }
 }

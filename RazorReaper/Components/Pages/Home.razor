@@ -1,14 +1,21 @@
 ﻿@page "/"
 @page "/home"
 @using RazorReaper.Components.Shared
-@using System.Net.Http
-@using System.Text.Json
-@using Microsoft.Extensions.Http
+@using RazorReaper.Services
+@using RazorReaper.Models
+@using Microsoft.Extensions.Logging
+@using Microsoft.Extensions.Options
+@using RazorReaper.Configuration
 @using System.Diagnostics
 @using System.Management
 @using System.Runtime.InteropServices
-@inject IHttpClientFactory HttpClientFactory
-@implements IDisposable
+@inject IWeatherService WeatherService
+@inject IActivityService ActivityService
+@inject IArkPathProvider ArkPathProvider
+@inject ILogger<Home> Logger
+@inject IOptions<AppConfiguration> Configuration
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
 
 <div class="app-container">
     <RazorReaper.Components.Shared.SharedNavbar/>
@@ -314,7 +321,7 @@
                 <button class="btn-small" @onclick="ClearActivity">Clear All</button>
             </div>
             <div class="activity-feed">
-                @if (recentActivities.Count == 0)
+                @if (ActivityService.GetRecentActivities().Count == 0)
                 {
                     <div class="activity-empty">
                         <svg fill="currentColor" viewBox="0 0 20 20">
@@ -325,7 +332,7 @@
                 }
                 else
                 {
-                    @foreach (var activity in recentActivities.Take(10))
+                    @foreach (var activity in ActivityService.GetRecentActivities().Take(10))
                     {
                         <div class="activity-item @activity.Type">
                             <div class="activity-icon">
@@ -396,7 +403,8 @@
     private string totalSessionTime = "0h 0m";
     private int configChanges = 0;
 
-    private static List<ActivityItem> recentActivities = new List<ActivityItem>();
+    private const string CLICKS_STORAGE_KEY = "TotalLifetimeClicks";
+    private const string CONFIG_CHANGES_STORAGE_KEY = "ConfigChanges";
 
     // System resources
     private int cpuUsage = 0;
@@ -426,7 +434,7 @@
         await LoadStatistics();
 
         // Add initial activity
-        AddActivity("Dashboard loaded", "success");
+        ActivityService.AddActivity("Dashboard loaded", "success");
 
         // Start resource monitoring
         StartResourceMonitoring();
@@ -458,10 +466,12 @@
             resourceTimer = new System.Timers.Timer(2000); // Update every 2 seconds
             resourceTimer.Elapsed += UpdateResources;
             resourceTimer.Start();
+
+            Logger.LogDebug("Resource monitoring started: {TotalRAM} GB total RAM", ramTotalGB);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Resource monitoring error: {ex.Message}");
+            Logger.LogError(ex, "Error starting resource monitoring");
         }
     }
 
@@ -487,7 +497,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Resource update error: {ex.Message}");
+            Logger.LogError(ex, "Error updating resource usage");
         }
     }
 
@@ -498,82 +508,22 @@
 
         try
         {
-            var httpClient = HttpClientFactory.CreateClient();
-            httpClient.Timeout = TimeSpan.FromSeconds(15);
+            Logger.LogInformation("Loading weather data");
+            weather = await WeatherService.GetWeatherAsync();
 
-            // First get IP location using ipapi.co (more reliable)
-            try
+            if (weather != null)
             {
-                var ipResponse = await httpClient.GetStringAsync("https://ipapi.co/json/");
-                var ipData = JsonDocument.Parse(ipResponse);
-                var lat = ipData.RootElement.GetProperty("latitude").GetDouble();
-                var lon = ipData.RootElement.GetProperty("longitude").GetDouble();
-                var city = ipData.RootElement.GetProperty("city").GetString() ?? "Unknown";
-                var country = ipData.RootElement.GetProperty("country_name").GetString() ?? "Unknown";
-
-                Console.WriteLine($"Location: {city}, {country} ({lat}, {lon})");
-
-                // Get weather from Open-Meteo (free, no API key needed)
-                var weatherUrl = $"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,apparent_temperature,weather_code&temperature_unit=celsius";
-                var weatherResponse = await httpClient.GetStringAsync(weatherUrl);
-                var weatherData = JsonDocument.Parse(weatherResponse);
-
-                Console.WriteLine($"Weather data received: {weatherResponse.Substring(0, Math.Min(200, weatherResponse.Length))}");
-
-                var temp = weatherData.RootElement.GetProperty("current").GetProperty("temperature_2m").GetDouble();
-                var feelsLike = weatherData.RootElement.GetProperty("current").GetProperty("apparent_temperature").GetDouble();
-                var weatherCode = weatherData.RootElement.GetProperty("current").GetProperty("weather_code").GetInt32();
-
-                weather = new WeatherData
-                {
-                    Temperature = (int)Math.Round(temp),
-                    FeelsLike = (int)Math.Round(feelsLike),
-                    Condition = GetWeatherCondition(weatherCode),
-                    City = city,
-                    Country = country
-                };
-
-                Console.WriteLine($"Weather loaded successfully: {temp}°C, {GetWeatherCondition(weatherCode)}");
+                Logger.LogInformation("Weather loaded successfully: {Temperature}°C, {Condition} in {City}",
+                    weather.Temperature, weather.Condition, weather.City);
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine($"Primary weather API failed: {ex.Message}, trying fallback...");
-
-                // Fallback: Use a simpler API
-                var fallbackResponse = await httpClient.GetStringAsync("https://ipinfo.io/json");
-                var fallbackData = JsonDocument.Parse(fallbackResponse);
-                var loc = fallbackData.RootElement.GetProperty("loc").GetString()?.Split(',');
-
-                if (loc != null && loc.Length == 2)
-                {
-                    var lat = double.Parse(loc[0]);
-                    var lon = double.Parse(loc[1]);
-                    var city = fallbackData.RootElement.GetProperty("city").GetString() ?? "Unknown";
-                    var country = fallbackData.RootElement.GetProperty("country").GetString() ?? "Unknown";
-
-                    var weatherUrl = $"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,apparent_temperature,weather_code&temperature_unit=celsius";
-                    var weatherResponse = await httpClient.GetStringAsync(weatherUrl);
-                    var weatherData = JsonDocument.Parse(weatherResponse);
-
-                    var temp = weatherData.RootElement.GetProperty("current").GetProperty("temperature_2m").GetDouble();
-                    var feelsLike = weatherData.RootElement.GetProperty("current").GetProperty("apparent_temperature").GetDouble();
-                    var weatherCode = weatherData.RootElement.GetProperty("current").GetProperty("weather_code").GetInt32();
-
-                    weather = new WeatherData
-                    {
-                        Temperature = (int)Math.Round(temp),
-                        FeelsLike = (int)Math.Round(feelsLike),
-                        Condition = GetWeatherCondition(weatherCode),
-                        City = city,
-                        Country = country
-                    };
-                }
+                Logger.LogWarning("Weather data could not be loaded");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Weather error: {ex.Message}");
-            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            Logger.LogError(ex, "Error loading weather data");
             weather = null;
         }
         finally
@@ -583,96 +533,64 @@
         }
     }
 
-    private string GetWeatherCondition(int code)
-    {
-        return code switch
-        {
-            0 => "Clear",
-            1 or 2 or 3 => "Partly Cloudy",
-            45 or 48 => "Foggy",
-            51 or 53 or 55 => "Drizzle",
-            61 or 63 or 65 => "Rain",
-            71 or 73 or 75 => "Snow",
-            80 or 81 or 82 => "Showers",
-            95 or 96 or 99 => "Thunderstorm",
-            _ => "Unknown"
-        };
-    }
 
     private async Task LoadStatistics()
     {
-        // TODO: Load from persistent storage (localStorage or file)
-        totalLifetimeClicks = 0; // Will implement storage later
-        totalSessionTime = "0h 0m";
-        configChanges = 0;
+        try
+        {
+            var clicksStr = await JSRuntime.InvokeAsync<string>("localStorage.getItem", CLICKS_STORAGE_KEY);
+            var configStr = await JSRuntime.InvokeAsync<string>("localStorage.getItem", CONFIG_CHANGES_STORAGE_KEY);
+
+            if (!string.IsNullOrEmpty(clicksStr) && long.TryParse(clicksStr, out long clicks))
+            {
+                totalLifetimeClicks = clicks;
+            }
+
+            if (!string.IsNullOrEmpty(configStr) && int.TryParse(configStr, out int configs))
+            {
+                configChanges = configs;
+            }
+
+            Logger.LogDebug("Statistics loaded: {Clicks} clicks, {Configs} config changes", totalLifetimeClicks, configChanges);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading statistics");
+        }
     }
 
-    public static void AddActivity(string title, string type = "info")
+    private async Task SaveStatistics()
     {
-        recentActivities.Insert(0, new ActivityItem
+        try
         {
-            Title = title,
-            Timestamp = DateTime.Now,
-            Type = type
-        });
-
-        // Keep only last 50 activities
-        if (recentActivities.Count > 50)
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", CLICKS_STORAGE_KEY, totalLifetimeClicks.ToString());
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", CONFIG_CHANGES_STORAGE_KEY, configChanges.ToString());
+            Logger.LogDebug("Statistics saved");
+        }
+        catch (Exception ex)
         {
-            recentActivities.RemoveAt(recentActivities.Count - 1);
+            Logger.LogError(ex, "Error saving statistics");
         }
     }
 
     private void ClearActivity()
     {
-        recentActivities.Clear();
+        Logger.LogInformation("Clearing all activities");
+        ActivityService.ClearActivities();
         StateHasChanged();
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
+        Logger.LogDebug("Disposing Home component resources");
+
         clockTimer?.Stop();
         clockTimer?.Dispose();
         resourceTimer?.Stop();
         resourceTimer?.Dispose();
         cpuCounter?.Dispose();
         ramCounter?.Dispose();
-    }
 
-    public class SystemStatus
-    {
-        public bool IsHealthy { get; set; }
-    }
-
-    public class WeatherData
-    {
-        public int Temperature { get; set; }
-        public int FeelsLike { get; set; }
-        public string Condition { get; set; } = "";
-        public string City { get; set; } = "";
-        public string Country { get; set; } = "";
-    }
-
-    public class ActivityItem
-    {
-        public string Title { get; set; } = "";
-        public DateTime Timestamp { get; set; }
-        public string Type { get; set; } = "info";
-
-        public string GetTimeAgo()
-        {
-            var span = DateTime.Now - Timestamp;
-
-            if (span.TotalSeconds < 60)
-                return "Just now";
-            if (span.TotalMinutes < 60)
-                return $"{(int)span.TotalMinutes}m ago";
-            if (span.TotalHours < 24)
-                return $"{(int)span.TotalHours}h ago";
-            if (span.TotalDays < 7)
-                return $"{(int)span.TotalDays}d ago";
-
-            return Timestamp.ToString("MMM dd");
-        }
+        await Task.CompletedTask;
     }
 }

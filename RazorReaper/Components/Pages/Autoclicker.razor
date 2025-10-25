@@ -2,8 +2,9 @@
 @using System.Runtime.InteropServices
 @using System.Timers
 @using System.Drawing
+@using RazorReaper.Services
 @inject IJSRuntime JSRuntime
-@using RazorReaper.Components.Pages
+@inject IActivityService ActivityService
 @implements IDisposable
 
 <div class="app-container">
@@ -325,6 +326,22 @@
                             </div>
                         </div>
                     }
+                    @if (showDeleteDialog)
+                    {
+                        <div class="profile-dialog">
+                            <select class="profile-select" @bind="selectedProfileName">
+                                <option value="">Select profile to delete...</option>
+                                @foreach (var profile in savedProfiles)
+                                {
+                                    <option value="@profile.Name">@profile.Name</option>
+                                }
+                            </select>
+                            <div class="dialog-buttons">
+                                <button class="btn-small" @onclick="DeleteProfile" disabled="@string.IsNullOrEmpty(selectedProfileName)">Delete</button>
+                                <button class="btn-small" @onclick="() => showDeleteDialog = false">Cancel</button>
+                            </div>
+                        </div>
+                    }
                 </div>
 
                 <div class="content-card">
@@ -447,7 +464,9 @@
     // Profiles
     private List<ClickProfile> savedProfiles = new List<ClickProfile>();
     private bool showSaveDialog = false;
+    private bool showDeleteDialog = false;
     private string newProfileName = "";
+    private string selectedProfileName = "";
 
     // Heatmap
     private List<ClickRecord> clickHistory = new List<ClickRecord>();
@@ -468,6 +487,7 @@
 
     private const string HOTKEY_STORAGE_KEY = "AutoclickerHotkey";
     private const string HOTKEY_CODE_STORAGE_KEY = "AutoclickerHotkeyCode";
+    private const string PROFILES_STORAGE_KEY = "AutoclickerProfiles";
     private const int HOTKEY_COOLDOWN_MS = 2000; // 2 seconds
 
     [DllImport("user32.dll")]
@@ -588,6 +608,9 @@
         // Load saved hotkey from localStorage
         await LoadSavedHotkey();
 
+        // Load saved profiles from localStorage
+        await LoadSavedProfiles();
+
         mouseTrackingTimer = new Timer(100);
         mouseTrackingTimer.Elapsed += UpdateMousePosition;
         mouseTrackingTimer.Start();
@@ -624,6 +647,39 @@
         {
             await JSRuntime.InvokeVoidAsync("localStorage.setItem", HOTKEY_STORAGE_KEY, hotkey);
             await JSRuntime.InvokeVoidAsync("localStorage.setItem", HOTKEY_CODE_STORAGE_KEY, currentHotkeyCode.ToString());
+        }
+        catch
+        {
+            // Ignore save errors
+        }
+    }
+
+    private async Task LoadSavedProfiles()
+    {
+        try
+        {
+            var json = await JSRuntime.InvokeAsync<string>("localStorage.getItem", PROFILES_STORAGE_KEY);
+            if (!string.IsNullOrEmpty(json))
+            {
+                var profiles = System.Text.Json.JsonSerializer.Deserialize<List<ClickProfile>>(json);
+                if (profiles != null)
+                {
+                    savedProfiles = profiles;
+                }
+            }
+        }
+        catch
+        {
+            // Ignore load errors
+        }
+    }
+
+    private async Task SaveProfiles()
+    {
+        try
+        {
+            var json = System.Text.Json.JsonSerializer.Serialize(savedProfiles);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", PROFILES_STORAGE_KEY, json);
         }
         catch
         {
@@ -685,7 +741,7 @@
         StateHasChanged();
     }
 
-    private async void CaptureHotkey(KeyboardEventArgs e)
+    private async Task CaptureHotkey(KeyboardEventArgs e)
     {
         if (recordingKey)
         {
@@ -979,7 +1035,7 @@
         }
 
         // Log activity
-        Home.AddActivity($"Autoclicker started ({GetIntervalDisplay()} interval)", "success");
+        ActivityService.AddActivity($"Autoclicker started ({GetIntervalDisplay()} interval)", "success");
 
         await InvokeAsync(StateHasChanged);
     }
@@ -1028,7 +1084,7 @@
         }
 
         // Log activity
-        Home.AddActivity($"Autoclicker stopped ({clickCount} clicks performed)", "info");
+        ActivityService.AddActivity($"Autoclicker stopped ({clickCount} clicks performed)", "info");
 
         StateHasChanged();
     }
@@ -1334,10 +1390,23 @@
 
     private void ShowDeleteProfileDialog()
     {
-        // TODO: Implement delete dialog
+        showDeleteDialog = true;
+        selectedProfileName = "";
+        StateHasChanged();
     }
 
-    private void SaveCurrentProfile()
+    private async Task DeleteProfile()
+    {
+        if (string.IsNullOrWhiteSpace(selectedProfileName)) return;
+
+        savedProfiles.RemoveAll(p => p.Name == selectedProfileName);
+        await SaveProfiles();
+        showDeleteDialog = false;
+        ActivityService.AddActivity($"Profile '{selectedProfileName}' deleted", "warning");
+        StateHasChanged();
+    }
+
+    private async Task SaveCurrentProfile()
     {
         if (string.IsNullOrWhiteSpace(newProfileName)) return;
 
@@ -1366,9 +1435,10 @@
         // Remove existing profile with same name
         savedProfiles.RemoveAll(p => p.Name == newProfileName);
         savedProfiles.Add(profile);
+        await SaveProfiles();
 
         showSaveDialog = false;
-        Home.AddActivity($"Profile '{newProfileName}' saved", "success");
+        ActivityService.AddActivity($"Profile '{newProfileName}' saved", "success");
         StateHasChanged();
     }
 
@@ -1398,7 +1468,7 @@
         burstClickCount = profile.BurstClickCount;
         burstPauseSeconds = profile.BurstPauseSeconds;
 
-        Home.AddActivity($"Profile '{profileName}' loaded", "info");
+        ActivityService.AddActivity($"Profile '{profileName}' loaded", "info");
         StateHasChanged();
     }
 
@@ -1454,22 +1524,33 @@
     private void ClearHeatmapData()
     {
         clickHistory.Clear();
-        Home.AddActivity("Click heatmap data cleared", "warning");
+        ActivityService.AddActivity("Click heatmap data cleared", "warning");
         StateHasChanged();
     }
 
-    private void ExportHeatmapData()
+    private async Task ExportHeatmapData()
     {
         try
         {
+            if (clickHistory.Count == 0)
+            {
+                ActivityService.AddActivity("No heatmap data to export", "warning");
+                return;
+            }
+
             var csv = "X,Y,Timestamp\n" + string.Join("\n", clickHistory.Select(c => $"{c.X},{c.Y},{c.Timestamp:yyyy-MM-dd HH:mm:ss}"));
             var filename = $"heatmap_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
-            // TODO: Implement file save dialog
-            Home.AddActivity($"Heatmap data exported to {filename}", "success");
+
+            // Save to Downloads folder
+            var downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+            var fullPath = Path.Combine(downloadsPath, filename);
+
+            await File.WriteAllTextAsync(fullPath, csv);
+            ActivityService.AddActivity($"Heatmap exported to {fullPath}", "success");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Export error: {ex.Message}");
+            ActivityService.AddActivity($"Export failed: {ex.Message}", "warning");
         }
     }
 
