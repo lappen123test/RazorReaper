@@ -38,6 +38,20 @@
                 <div class="clock-display">
                     <div class="clock-time">@currentTime.ToString("HH:mm:ss")</div>
                     <div class="clock-date">@currentTime.ToString("dddd, MMMM dd, yyyy")</div>
+                    <div class="clock-details">
+                        <div class="clock-detail-item">
+                            <span class="detail-label">Timezone:</span>
+                            <span class="detail-value">@timeZoneInfo</span>
+                        </div>
+                        <div class="clock-detail-item">
+                            <span class="detail-label">UTC Offset:</span>
+                            <span class="detail-value">@utcOffset</span>
+                        </div>
+                        <div class="clock-detail-item">
+                            <span class="detail-label">Week:</span>
+                            <span class="detail-value">Week @weekNumber of @currentTime.Year</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -207,63 +221,6 @@
         </div>
 
         <div class="content-card">
-            <div class="system-status-header">
-                <div class="status-indicator @(systemStatus.IsHealthy ? "healthy" : "warning")"></div>
-                <h2>System Status</h2>
-            </div>
-
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon success">
-                        <svg fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-value">Ready</div>
-                        <div class="stat-label">ARK Installation</div>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon primary">
-                        <svg fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-value">3</div>
-                        <div class="stat-label">Config Files Found</div>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon success">
-                        <svg fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-value">2</div>
-                        <div class="stat-label">Active Presets</div>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon warning">
-                        <svg fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-value">3</div>
-                        <div class="stat-label">Days Since Backup</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="content-card">
             <h2>Quick Actions</h2>
             <div class="actions-grid">
 
@@ -306,64 +263,6 @@
                     </div>
                 </a>
 
-            </div>
-        </div>
-
-        <div class="content-card">
-            <h2>Available Configuration Presets</h2>
-
-            <div class="presets-grid">
-                <div class="preset-card">
-                    <div class="preset-header">
-                        <h4 class="preset-name">Bloodstalker</h4>
-                        <div class="preset-status active"></div>
-                    </div>
-                    <p class="preset-description">Optimized for Bloodstalker taming and web-slinging gameplay</p>
-                    <div class="preset-tags">
-                        <span class="tag">Visibility</span>
-                        <span class="tag">Performance</span>
-                    </div>
-                </div>
-
-                <div class="preset-card">
-                    <div class="preset-header">
-                        <h4 class="preset-name">Gen2 Farming</h4>
-                        <div class="preset-status"></div>
-                    </div>
-                    <p class="preset-description">Specialized settings for Genesis Part 2 resource farming</p>
-                    <div class="preset-tags">
-                        <span class="tag">Farming</span>
-                        <span class="tag">Genesis</span>
-                    </div>
-                </div>
-
-                <div class="preset-card">
-                    <div class="preset-header">
-                        <h4 class="preset-name">Ultra Minimal FPS</h4>
-                        <div class="preset-status active"></div>
-                    </div>
-                    <p class="preset-description">Maximum FPS with minimal visual effects for competitive play</p>
-                    <div class="preset-tags">
-                        <span class="tag">Performance</span>
-                        <span class="tag">Competitive</span>
-                    </div>
-                </div>
-
-                <div class="preset-card">
-                    <div class="preset-header">
-                        <h4 class="preset-name">Hard & Black</h4>
-                        <div class="preset-status"></div>
-                    </div>
-                    <p class="preset-description">Dark theme optimization for better visibility in caves</p>
-                    <div class="preset-tags">
-                        <span class="tag">Visibility</span>
-                        <span class="tag">Dark</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="presets-footer">
-                <a href="/ini-changer" class="btn btn-primary">View All Presets (10 Available)</a>
             </div>
         </div>
 
@@ -425,23 +324,90 @@
         </div>
 
         <div class="content-card">
-            <h3>System Paths</h3>
+            <div class="paths-header">
+                <h3>System Paths</h3>
+                @if (!isEditingArkPath)
+                {
+                    <button class="btn-small btn-edit" @onclick="StartEditingArkPath">
+                        <svg fill="currentColor" viewBox="0 0 20 20" style="width: 14px; height: 14px;">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                        </svg>
+                        Change ARK Path
+                    </button>
+                }
+            </div>
+
+            @if (isEditingArkPath)
+            {
+                <div class="path-edit-section">
+                    <div class="path-edit-info">
+                        <svg fill="currentColor" viewBox="0 0 20 20" style="width: 20px; height: 20px; color: var(--accent-orange);">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                        <p>Set a custom ARK installation path. This will be used for all file operations.</p>
+                    </div>
+                    <div class="path-edit-input">
+                        <input type="text" @bind="customArkPath" placeholder="C:\Program Files (x86)\Steam\steamapps\common\ARK" class="ark-path-input" />
+                    </div>
+                    <div class="path-edit-actions">
+                        <button class="btn btn-secondary" @onclick="SaveCustomArkPath">
+                            <svg fill="currentColor" viewBox="0 0 20 20" style="width: 16px; height: 16px;">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                            Save Path
+                        </button>
+                        <button class="btn btn-secondary" @onclick="CancelEditingArkPath">
+                            <svg fill="currentColor" viewBox="0 0 20 20" style="width: 16px; height: 16px;">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                            Cancel
+                        </button>
+                        <button class="btn btn-secondary" @onclick="ResetToAutoDetect">
+                            <svg fill="currentColor" viewBox="0 0 20 20" style="width: 16px; height: 16px;">
+                                <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                            </svg>
+                            Auto-Detect
+                        </button>
+                    </div>
+                </div>
+            }
+
             <div class="paths-list">
-                <div class="path-item">
-                    <div class="path-label">ARK Installation</div>
-                    <div class="path-value">C:\Program Files (x86)\Steam\steamapps\common\ARK</div>
-                    <div class="path-status success">
+                <div class="path-item clickable" @onclick="() => OpenFolderInExplorer(arkInstallPath)">
+                    <div class="path-info-left">
+                        <div class="path-icon-container">
+                            <svg fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                            </svg>
+                        </div>
+                        <div class="path-details">
+                            <div class="path-label">ARK Installation</div>
+                            <div class="path-value">@(string.IsNullOrEmpty(arkInstallPath) ? "Not found" : arkInstallPath)</div>
+                        </div>
+                    </div>
+                    <div class="path-action">
                         <svg fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                            <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
                         </svg>
                     </div>
                 </div>
-                <div class="path-item">
-                    <div class="path-label">Config Directory</div>
-                    <div class="path-value">C:\Users\Username\AppData\Local\ARK\Saved\Config\WindowsNoEditor</div>
-                    <div class="path-status success">
+                <div class="path-item clickable" @onclick="() => OpenFolderInExplorer(configPath)">
+                    <div class="path-info-left">
+                        <div class="path-icon-container">
+                            <svg fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="path-details">
+                            <div class="path-label">Config Directory</div>
+                            <div class="path-value">@(string.IsNullOrEmpty(configPath) ? "Not found" : configPath)</div>
+                        </div>
+                    </div>
+                    <div class="path-action">
                         <svg fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" />
+                            <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                            <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
                         </svg>
                     </div>
                 </div>
@@ -454,6 +420,9 @@
     private SystemStatus systemStatus = new SystemStatus { IsHealthy = true };
     private DateTime currentTime = DateTime.Now;
     private System.Timers.Timer? updateTimer; // Consolidated timer for clock and session
+    private string timeZoneInfo = "";
+    private string utcOffset = "";
+    private int weekNumber = 0;
 
     private WeatherData? weather = null;
     private bool weatherLoading = true;
@@ -489,10 +458,25 @@
     private string gpuName = "Unknown";
     private string motherboardName = "Unknown";
 
+    // ARK Path Management
+    private string arkInstallPath = "";
+    private string configPath = "";
+    private bool isEditingArkPath = false;
+    private string customArkPath = "";
+    private const string CustomPathPreferenceKey = "CustomArkInstallPath";
+
     private bool _isDisposed = false;
 
     protected override async Task OnInitializedAsync()
     {
+        // Initialize timezone information
+        var localTimeZone = TimeZoneInfo.Local;
+        timeZoneInfo = localTimeZone.DisplayName;
+        UpdateTimeZoneInfo();
+
+        // Load ARK paths
+        LoadArkPaths();
+
         // Load or create session start time
         await LoadSessionStartTime();
 
@@ -506,6 +490,7 @@
 
             currentTime = DateTime.Now;
             UpdateSessionTime();
+            UpdateTimeZoneInfo();
 
             if (!_isDisposed)
                 InvokeAsync(StateHasChanged);
@@ -731,6 +716,27 @@
         {
             totalSessionTime = $"{seconds}s";
         }
+    }
+
+    private void UpdateTimeZoneInfo()
+    {
+        var localTimeZone = TimeZoneInfo.Local;
+        var offset = localTimeZone.GetUtcOffset(currentTime);
+
+        // Format UTC offset (e.g., UTC+01:00 or UTC-05:00)
+        var offsetHours = offset.Hours;
+        var offsetMinutes = Math.Abs(offset.Minutes);
+        var sign = offsetHours >= 0 ? "+" : "";
+        utcOffset = $"UTC{sign}{offsetHours:00}:{offsetMinutes:00}";
+
+        // Calculate ISO week number
+        var culture = System.Globalization.CultureInfo.CurrentCulture;
+        var calendar = culture.Calendar;
+        weekNumber = calendar.GetWeekOfYear(
+            currentTime,
+            culture.DateTimeFormat.CalendarWeekRule,
+            culture.DateTimeFormat.FirstDayOfWeek
+        );
     }
 
     private void LoadWiFiInfo()
@@ -1097,6 +1103,148 @@
             return @<svg class="weather-icon default" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="100" cy="100" r="35" fill="#8b5cf6" opacity="0.6"/>
             </svg>;
+        }
+    }
+
+    // ARK Path Management Methods
+    private void LoadArkPaths()
+    {
+        try
+        {
+            // Try to load custom path from preferences
+            var customPath = Preferences.Get(CustomPathPreferenceKey, string.Empty);
+
+            if (!string.IsNullOrEmpty(customPath) && Directory.Exists(customPath))
+            {
+                arkInstallPath = customPath;
+                Logger.LogInformation("Using custom ARK path: {Path}", arkInstallPath);
+            }
+            else
+            {
+                // Auto-detect ARK path
+                arkInstallPath = ArkUtilities.FindArkPath() ?? "";
+                Logger.LogInformation("Auto-detected ARK path: {Path}", arkInstallPath);
+            }
+
+            // Set config path based on ARK installation
+            if (!string.IsNullOrEmpty(arkInstallPath))
+            {
+                configPath = Path.Combine(arkInstallPath, "ShooterGame", "Saved", "Config", "WindowsNoEditor");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading ARK paths");
+        }
+    }
+
+    private void OpenFolderInExplorer(string? path)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(path) || !Directory.Exists(path))
+            {
+                NotificationService.ShowError("Path does not exist");
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = $"\"{path}\"",
+                UseShellExecute = true
+            });
+
+            ActivityService.AddActivity($"Opened folder: {Path.GetFileName(path)}", "info");
+            Logger.LogInformation("Opened folder in explorer: {Path}", path);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowError($"Failed to open folder: {ex.Message}");
+            Logger.LogError(ex, "Error opening folder in explorer");
+        }
+    }
+
+    private void StartEditingArkPath()
+    {
+        isEditingArkPath = true;
+        customArkPath = arkInstallPath;
+        StateHasChanged();
+    }
+
+    private void CancelEditingArkPath()
+    {
+        isEditingArkPath = false;
+        customArkPath = "";
+        StateHasChanged();
+    }
+
+    private void SaveCustomArkPath()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(customArkPath))
+            {
+                NotificationService.ShowError("Please enter a valid ARK installation path");
+                return;
+            }
+
+            if (!Directory.Exists(customArkPath))
+            {
+                NotificationService.ShowError("The specified directory does not exist");
+                return;
+            }
+
+            // Validate that it's an ARK installation by checking for ShooterGame.exe
+            var shooterGameExe = Path.Combine(customArkPath, "ShooterGame", "Binaries", "Win64", "ShooterGame.exe");
+            if (!File.Exists(shooterGameExe))
+            {
+                NotificationService.ShowWarning("Warning: This doesn't appear to be a valid ARK installation (ShooterGame.exe not found)");
+            }
+
+            // Save to preferences
+            Preferences.Set(CustomPathPreferenceKey, customArkPath);
+            arkInstallPath = customArkPath;
+            configPath = Path.Combine(arkInstallPath, "ShooterGame", "Saved", "Config", "WindowsNoEditor");
+
+            isEditingArkPath = false;
+            customArkPath = "";
+
+            NotificationService.ShowSuccess("Custom ARK path saved successfully");
+            ActivityService.AddActivity($"ARK path set to: {arkInstallPath}", "success");
+            Logger.LogInformation("Custom ARK path saved: {Path}", arkInstallPath);
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowError($"Error saving path: {ex.Message}");
+            Logger.LogError(ex, "Error saving custom ARK path");
+        }
+    }
+
+    private void ResetToAutoDetect()
+    {
+        try
+        {
+            // Remove custom path preference
+            Preferences.Remove(CustomPathPreferenceKey);
+
+            // Auto-detect again
+            LoadArkPaths();
+
+            isEditingArkPath = false;
+            customArkPath = "";
+
+            NotificationService.ShowSuccess("Reset to auto-detect mode");
+            ActivityService.AddActivity("ARK path reset to auto-detect", "info");
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowError($"Error resetting path: {ex.Message}");
+            Logger.LogError(ex, "Error resetting to auto-detect");
         }
     }
 
