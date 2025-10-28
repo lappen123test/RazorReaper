@@ -204,7 +204,7 @@
                     return;
                 }
 
-                currentIniContent = File.ReadAllText(iniPath);
+                currentIniContent = File.ReadAllText(iniPath, System.Text.Encoding.UTF8);
                 InvokeAsync(() =>
                 {
                     NotificationService.ShowSuccess("INI file loaded successfully.");
@@ -238,7 +238,7 @@
                 }
 
                 currentIniContent = "";
-                File.WriteAllText(iniPath, currentIniContent);
+                File.WriteAllText(iniPath, currentIniContent, System.Text.Encoding.UTF8);
 
                 InvokeAsync(() =>
                 {
@@ -283,12 +283,19 @@
                 }
 
                 var directory = Path.GetDirectoryName(iniPath);
-                if (!Directory.Exists(directory))
+                if (string.IsNullOrEmpty(directory))
                 {
-                    Directory.CreateDirectory(directory!);
+                    InvokeAsync(() => NotificationService.ShowError("Invalid directory path"));
+                    Logger.LogError("Directory path is null or empty for INI file: {Path}", iniPath);
+                    return;
                 }
 
-                File.WriteAllText(iniPath, currentIniContent);
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                File.WriteAllText(iniPath, currentIniContent, System.Text.Encoding.UTF8);
                 InvokeAsync(() => NotificationService.ShowSuccess("INI file saved successfully!"));
                 Logger.LogInformation("INI file saved to: {Path}", iniPath);
             });

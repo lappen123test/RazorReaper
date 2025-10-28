@@ -490,6 +490,8 @@
     private const string PROFILES_STORAGE_KEY = "AutoclickerProfiles";
     private const int HOTKEY_COOLDOWN_MS = 2000; // 2 seconds
 
+    private CancellationTokenSource? _hotkeyMonitorCts;
+
     [DllImport("user32.dll")]
     private static extern bool GetCursorPos(out POINT lpPoint);
 
@@ -615,7 +617,8 @@
         mouseTrackingTimer.Elapsed += UpdateMousePosition;
         mouseTrackingTimer.Start();
 
-        _ = Task.Run(MonitorHotkey);
+        _hotkeyMonitorCts = new CancellationTokenSource();
+        _ = Task.Run(() => MonitorHotkey(_hotkeyMonitorCts.Token));
 
         await base.OnInitializedAsync();
     }
@@ -697,11 +700,11 @@
         }
     }
 
-    private async Task MonitorHotkey()
+    private async Task MonitorHotkey(CancellationToken cancellationToken)
     {
         bool wasPressed = false;
 
-        while (true)
+        while (!cancellationToken.IsCancellationRequested)
         {
             try
             {
@@ -709,7 +712,7 @@
                 if (recordingKey || !hotkeyEnabled)
                 {
                     wasPressed = false;
-                    await Task.Delay(100);
+                    await Task.Delay(100, cancellationToken);
                     continue;
                 }
 
@@ -725,11 +728,16 @@
                 }
 
                 wasPressed = isPressed;
-                await Task.Delay(50);
+                await Task.Delay(50, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // Task was cancelled, exit gracefully
+                break;
             }
             catch
             {
-                await Task.Delay(100);
+                await Task.Delay(100, cancellationToken);
             }
         }
     }
@@ -1559,6 +1567,10 @@
         StopClicking();
         mouseTrackingTimer?.Stop();
         mouseTrackingTimer?.Dispose();
+
+        // Cancel and dispose the hotkey monitoring task
+        _hotkeyMonitorCts?.Cancel();
+        _hotkeyMonitorCts?.Dispose();
 
         // Cleanup mouse hook if active
         if (mouseHookID != IntPtr.Zero)

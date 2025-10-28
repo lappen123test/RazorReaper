@@ -472,6 +472,7 @@
     private PerformanceCounter? ramCounter;
     private List<PerformanceCounter> gpuCounters = new();
     private bool hasGpuCounter = false;
+    private bool resourceMonitoringInitialized = false;
     private Process? currentProcess; // Cache current process to avoid creating new ones
 
     // WiFi and System Info
@@ -481,24 +482,31 @@
     private string gpuName = "Unknown";
     private string motherboardName = "Unknown";
 
+    private bool _isDisposed = false;
+
     protected override async Task OnInitializedAsync()
     {
         // Load or create session start time
         await LoadSessionStartTime();
 
         // Start consolidated update timer (updates clock and session time together)
-        // Reduced to 2 seconds to minimize StateHasChanged calls and reduce lag
-        updateTimer = new System.Timers.Timer(2000);
+        // Set to 1 second for smooth clock updates without excessive overhead
+        updateTimer = new System.Timers.Timer(1000);
         updateTimer.Elapsed += (s, e) =>
         {
+            if (_isDisposed)
+                return;
+
             currentTime = DateTime.Now;
             UpdateSessionTime();
-            InvokeAsync(StateHasChanged);
+
+            if (!_isDisposed)
+                InvokeAsync(StateHasChanged);
         };
         updateTimer.Start();
 
-        // Load weather data
-        await LoadWeatherData();
+        // Load weather data asynchronously (don't block page load)
+        _ = LoadWeatherData();
 
         // Load statistics from storage
         await LoadStatistics();
@@ -506,12 +514,16 @@
         // Add initial activity
         ActivityService.AddActivity("Dashboard loaded", "success");
 
-        // Start resource monitoring
-        StartResourceMonitoring();
+        // Start resource monitoring in background to prevent UI blocking
+        _ = Task.Run(() => StartResourceMonitoring());
 
-        // Load WiFi and system information
-        LoadWiFiInfo();
-        LoadSystemHardwareInfo();
+        // Load WiFi and system information (run in background to avoid blocking)
+        _ = Task.Run(() =>
+        {
+            LoadWiFiInfo();
+            LoadSystemHardwareInfo();
+            InvokeAsync(StateHasChanged);
+        });
 
         await base.OnInitializedAsync();
     }
@@ -528,10 +540,10 @@
             cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
             ramCounter = new PerformanceCounter("Memory", "% Committed Bytes In Use");
 
-            // Try to initialize GPU counters - create all upfront to avoid lag
+            // Try to initialize GPU counters - works for NVIDIA, AMD, Intel, and other GPUs on Windows 10+
             try
             {
-                Logger.LogInformation("Detecting GPU performance counters for RTX 4060ti...");
+                Logger.LogInformation("Detecting GPU performance counters...");
 
                 if (PerformanceCounterCategory.Exists("GPU Engine"))
                 {
@@ -540,8 +552,8 @@
 
                     Logger.LogDebug("Found {Count} GPU Engine instances", instanceNames.Length);
 
-                    // Find and create counters for ALL 3D engine instances
-                    int gpuEngineCount = 0;
+                    // Find and create counters for ALL 3D engine instances (works across all GPU brands)
+                    // engtype_3D is the standard Windows performance counter for 3D rendering workload
                     foreach (var instance in instanceNames)
                     {
                         if (instance.Contains("engtype_3D", StringComparison.OrdinalIgnoreCase))
@@ -549,14 +561,13 @@
                             try
                             {
                                 var counter = new PerformanceCounter("GPU Engine", "Utilization Percentage", instance);
-                                counter.NextValue(); // Initialize
+                                counter.NextValue(); // Initialize counter
                                 gpuCounters.Add(counter);
-                                gpuEngineCount++;
-                                Logger.LogDebug("GPU 3D Engine added: {Instance}", instance);
+                                Logger.LogDebug("GPU 3D Engine counter added: {Instance}", instance);
                             }
                             catch (Exception ex)
                             {
-                                Logger.LogDebug(ex, "Failed to add GPU counter for: {Instance}", instance);
+                                Logger.LogDebug(ex, "Failed to add GPU counter for instance: {Instance}", instance);
                             }
                         }
                     }
@@ -564,21 +575,23 @@
                     if (gpuCounters.Count > 0)
                     {
                         hasGpuCounter = true;
-                        Logger.LogInformation("GPU monitoring enabled: Found {Count} 3D engines for RTX 4060ti", gpuCounters.Count);
+                        Logger.LogInformation("GPU monitoring enabled: Successfully initialized {Count} GPU 3D engine counter(s)", gpuCounters.Count);
                     }
                     else
                     {
-                        Logger.LogWarning("No GPU 3D engines found - GPU monitoring disabled");
+                        Logger.LogWarning("GPU monitoring disabled: No GPU 3D engine counters found (this is normal for some older GPUs or driver versions)");
+                        hasGpuCounter = false;
                     }
                 }
                 else
                 {
-                    Logger.LogWarning("GPU Engine performance category not found - GPU monitoring disabled");
+                    Logger.LogWarning("GPU monitoring disabled: GPU Engine performance category not available (requires Windows 10 Fall Creators Update or later with compatible GPU drivers)");
+                    hasGpuCounter = false;
                 }
             }
             catch (Exception gpuEx)
             {
-                Logger.LogError(gpuEx, "Error initializing GPU counters: {Message}", gpuEx.Message);
+                Logger.LogWarning(gpuEx, "GPU monitoring disabled: Could not initialize GPU counters. This is normal for older systems or certain GPU configurations.");
                 hasGpuCounter = false;
             }
 
@@ -593,22 +606,33 @@
             cpuCounter.NextValue();
             ramCounter.NextValue();
 
-            // Start monitoring timer (5 seconds to reduce overhead and prevent lag)
-            resourceTimer = new System.Timers.Timer(5000);
+            // Mark initialization as complete
+            resourceMonitoringInitialized = true;
+
+            // Start monitoring timer (3 seconds for good balance between responsiveness and performance)
+            resourceTimer = new System.Timers.Timer(3000);
             resourceTimer.Elapsed += UpdateResources;
             resourceTimer.Start();
 
             Logger.LogInformation("Resource monitoring started: {TotalRAM} GB total RAM, GPU monitoring: {HasGPU} with {GPUCount} engines",
                 ramTotalGB, hasGpuCounter, gpuCounters.Count);
+
+            // Force first update after initialization
+            InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error starting resource monitoring");
+            resourceMonitoringInitialized = false;
         }
     }
 
     private void UpdateResources(object? sender, System.Timers.ElapsedEventArgs e)
     {
+        // Don't update if initialization hasn't completed or component is disposed
+        if (!resourceMonitoringInitialized || _isDisposed)
+            return;
+
         try
         {
             // Get CPU usage
@@ -617,21 +641,33 @@
             // Get RAM usage
             ramUsage = (int)Math.Round(ramCounter?.NextValue() ?? 0);
 
-            // Get GPU usage - read from pre-created counters (NO LAG!)
+            // Get GPU usage - read from pre-created counters and calculate average for better accuracy
             if (hasGpuCounter && gpuCounters.Count > 0)
             {
                 try
                 {
-                    float maxGpu = 0;
+                    float totalGpu = 0;
+                    int validCounters = 0;
+
                     foreach (var counter in gpuCounters)
                     {
-                        var value = counter.NextValue();
-                        if (value > maxGpu)
+                        try
                         {
-                            maxGpu = value;
+                            var value = counter.NextValue();
+                            totalGpu += value;
+                            validCounters++;
+                        }
+                        catch (Exception counterEx)
+                        {
+                            Logger.LogTrace(counterEx, "Failed to read individual GPU counter");
                         }
                     }
-                    gpuUsage = (int)Math.Round(maxGpu);
+
+                    if (validCounters > 0)
+                    {
+                        // Average all GPU 3D engines for more accurate representation
+                        gpuUsage = (int)Math.Round(totalGpu / validCounters);
+                    }
                 }
                 catch (Exception gpuEx)
                 {
@@ -660,7 +696,8 @@
                 }
             }
 
-            InvokeAsync(StateHasChanged);
+            if (!_isDisposed)
+                InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
@@ -693,14 +730,15 @@
     {
         try
         {
-            Logger.LogDebug("Loading WiFi information using netsh");
+            Logger.LogDebug("Detecting WiFi information...");
 
-            // Use netsh command to get WiFi information - more reliable than WMI
+            // Use netsh command to get WiFi information - works on all Windows 10+ systems
             var processInfo = new ProcessStartInfo
             {
                 FileName = "netsh",
                 Arguments = "wlan show interfaces",
                 RedirectStandardOutput = true,
+                RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
@@ -709,12 +747,21 @@
             if (process != null)
             {
                 var output = process.StandardOutput.ReadToEnd();
+                var error = process.StandardError.ReadToEnd();
                 process.WaitForExit();
 
-                Logger.LogDebug("Netsh output received, parsing...");
+                // Check if WiFi adapter is not available or disabled
+                if (!string.IsNullOrWhiteSpace(error) || output.Contains("not", StringComparison.OrdinalIgnoreCase))
+                {
+                    Logger.LogDebug("WiFi adapter not available or not connected");
+                    wifiName = "No WiFi Adapter";
+                    wifiSignalStrength = "N/A";
+                    return;
+                }
 
                 // Parse the output to extract SSID and signal strength
                 var lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                bool foundWifi = false;
 
                 foreach (var line in lines)
                 {
@@ -731,6 +778,10 @@
                             {
                                 wifiName = "Not Connected";
                             }
+                            else
+                            {
+                                foundWifi = true;
+                            }
                         }
                     }
                     else if (trimmedLine.StartsWith("Signal", StringComparison.OrdinalIgnoreCase))
@@ -743,18 +794,26 @@
                     }
                 }
 
-                Logger.LogInformation("WiFi detected: {Name} - {Signal}", wifiName, wifiSignalStrength);
+                if (foundWifi)
+                {
+                    Logger.LogInformation("WiFi connected: {Name} - {Signal}", wifiName, wifiSignalStrength);
+                }
+                else
+                {
+                    Logger.LogDebug("WiFi adapter available but not connected");
+                }
             }
             else
             {
-                Logger.LogWarning("Failed to start netsh process");
+                Logger.LogDebug("Failed to start netsh process - WiFi detection unavailable");
                 wifiName = "Unable to detect";
+                wifiSignalStrength = "N/A";
             }
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error loading WiFi information: {Message}", ex.Message);
-            wifiName = "Not Connected";
+            Logger.LogDebug(ex, "Could not detect WiFi information (this is normal for Ethernet-only systems)");
+            wifiName = "Not Available";
             wifiSignalStrength = "N/A";
         }
     }
@@ -763,54 +822,84 @@
     {
         try
         {
-            // Get CPU name
-            using (var searcher = new ManagementObjectSearcher("SELECT Name FROM Win32_Processor"))
+            // Get CPU name - works for Intel, AMD, and all processor brands
+            try
             {
-                foreach (ManagementObject processor in searcher.Get())
+                using (var searcher = new ManagementObjectSearcher("SELECT Name FROM Win32_Processor"))
                 {
-                    cpuName = processor["Name"]?.ToString()?.Trim() ?? "Unknown";
-                    break;
-                }
-            }
-
-            // Get GPU name
-            using (var searcher = new ManagementObjectSearcher("SELECT Name FROM Win32_VideoController"))
-            {
-                foreach (ManagementObject gpu in searcher.Get())
-                {
-                    var name = gpu["Name"]?.ToString() ?? "";
-                    if (!string.IsNullOrWhiteSpace(name) && !name.Contains("Microsoft Basic", StringComparison.OrdinalIgnoreCase))
+                    foreach (ManagementObject processor in searcher.Get())
                     {
-                        gpuName = name.Trim();
+                        cpuName = processor["Name"]?.ToString()?.Trim() ?? "Unknown";
                         break;
                     }
                 }
             }
-
-            // Get Motherboard name
-            using (var searcher = new ManagementObjectSearcher("SELECT Product, Manufacturer FROM Win32_BaseBoard"))
+            catch (Exception ex)
             {
-                foreach (ManagementObject board in searcher.Get())
-                {
-                    var manufacturer = board["Manufacturer"]?.ToString() ?? "";
-                    var product = board["Product"]?.ToString() ?? "";
-                    motherboardName = $"{manufacturer} {product}".Trim();
-                    break;
-                }
+                Logger.LogDebug(ex, "Could not detect CPU name");
+                cpuName = "Unknown";
             }
 
-            Logger.LogDebug("Hardware loaded: CPU={CPU}, GPU={GPU}, Motherboard={Motherboard}", cpuName, gpuName, motherboardName);
+            // Get GPU name - works for NVIDIA, AMD, Intel, and all GPU brands
+            try
+            {
+                using (var searcher = new ManagementObjectSearcher("SELECT Name FROM Win32_VideoController"))
+                {
+                    foreach (ManagementObject gpu in searcher.Get())
+                    {
+                        var name = gpu["Name"]?.ToString() ?? "";
+                        // Skip Microsoft Basic Display Adapter (software renderer)
+                        if (!string.IsNullOrWhiteSpace(name) &&
+                            !name.Contains("Microsoft Basic", StringComparison.OrdinalIgnoreCase) &&
+                            !name.Contains("Remote Desktop", StringComparison.OrdinalIgnoreCase))
+                        {
+                            gpuName = name.Trim();
+                            break;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogDebug(ex, "Could not detect GPU name");
+                gpuName = "Unknown";
+            }
+
+            // Get Motherboard name
+            try
+            {
+                using (var searcher = new ManagementObjectSearcher("SELECT Product, Manufacturer FROM Win32_BaseBoard"))
+                {
+                    foreach (ManagementObject board in searcher.Get())
+                    {
+                        var manufacturer = board["Manufacturer"]?.ToString() ?? "";
+                        var product = board["Product"]?.ToString() ?? "";
+                        motherboardName = $"{manufacturer} {product}".Trim();
+                        if (string.IsNullOrWhiteSpace(motherboardName))
+                        {
+                            motherboardName = "Unknown";
+                        }
+                        break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogDebug(ex, "Could not detect motherboard name");
+                motherboardName = "Unknown";
+            }
+
+            Logger.LogInformation("Hardware detected: CPU={CPU}, GPU={GPU}, Motherboard={Motherboard}", cpuName, gpuName, motherboardName);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error loading system hardware information");
+            Logger.LogWarning(ex, "Error loading system hardware information");
         }
     }
 
     private async Task LoadWeatherData()
     {
         weatherLoading = true;
-        StateHasChanged();
 
         try
         {
@@ -821,24 +910,21 @@
             {
                 Logger.LogInformation("Weather loaded successfully: {Temperature}°C, {Condition} in {City}",
                     weather.Temperature, weather.Condition, weather.City);
-                NotificationService.ShowSuccess($"Weather loaded: {weather.Temperature}°C in {weather.City}");
             }
             else
             {
                 Logger.LogWarning("Weather data could not be loaded");
-                NotificationService.ShowError("Unable to load weather data. Please check your internet connection.");
             }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading weather data");
             weather = null;
-            NotificationService.ShowError("Failed to load weather. Please try again later.");
         }
         finally
         {
             weatherLoading = false;
-            StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -1010,6 +1096,8 @@
     public async ValueTask DisposeAsync()
     {
         Logger.LogDebug("Disposing Home component resources");
+
+        _isDisposed = true;
 
         updateTimer?.Stop();
         updateTimer?.Dispose();

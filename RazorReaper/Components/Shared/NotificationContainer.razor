@@ -6,7 +6,7 @@
 <div class="notification-container">
     @foreach (var notification in notifications)
     {
-        <div class="notification notification-@notification.Type.ToString().ToLower() notification-entering" @key="notification.Id">
+        <div class="notification notification-@notification.Type.ToString().ToLower()" @key="notification.Id">
             <div class="notification-icon">
                 @if (notification.Type == NotificationType.Success)
                 {
@@ -47,9 +47,11 @@
 
 @code {
     private List<NotificationMessage> notifications = new();
+    private CancellationTokenSource? _autoRemoveCts;
 
     protected override void OnInitialized()
     {
+        _autoRemoveCts = new CancellationTokenSource();
         NotificationService.OnNotificationAdded += HandleNotificationAdded;
         NotificationService.OnNotificationRemoved += HandleNotificationRemoved;
     }
@@ -62,8 +64,22 @@
         // Auto-remove after duration - run on background thread to avoid UI blocking
         _ = Task.Run(async () =>
         {
-            await Task.Delay(notification.DurationMs);
-            await InvokeAsync(() => RemoveNotification(notification.Id));
+            try
+            {
+                if (_autoRemoveCts != null && !_autoRemoveCts.Token.IsCancellationRequested)
+                {
+                    await Task.Delay(notification.DurationMs, _autoRemoveCts.Token);
+
+                    if (!_autoRemoveCts.Token.IsCancellationRequested)
+                    {
+                        await InvokeAsync(() => RemoveNotification(notification.Id));
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Component was disposed, ignore
+            }
         });
     }
 
@@ -84,6 +100,9 @@
 
     public void Dispose()
     {
+        _autoRemoveCts?.Cancel();
+        _autoRemoveCts?.Dispose();
+
         NotificationService.OnNotificationAdded -= HandleNotificationAdded;
         NotificationService.OnNotificationRemoved -= HandleNotificationRemoved;
     }

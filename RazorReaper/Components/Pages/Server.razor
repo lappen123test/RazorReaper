@@ -4,10 +4,12 @@
 @using System.Net.Sockets
 @using System.Text.Json
 @using Microsoft.Win32
+@using Microsoft.Extensions.Logging
 @using RazorReaper.Components.Shared
 @using RazorReaper.Services
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
+@inject ILogger<Server> Logger
 @implements IDisposable
 
 <div class="app-container">
@@ -267,6 +269,7 @@
     private GameServer? currentServer;
     private Timer? refreshTimer;
     private bool isPageActive = true;
+    private bool _isDisposed = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -336,33 +339,39 @@
         // Only refresh if page is active and there are servers
         refreshTimer = new Timer(async _ =>
         {
-            if (isPageActive && servers.Any())
-            {
-                // Limit refresh to max 10 servers to prevent lag
-                var serversToRefresh = servers.Take(10).ToList();
+            if (_isDisposed || !isPageActive || !servers.Any())
+                return;
 
-                await InvokeAsync(async () =>
+            // Limit refresh to max 10 servers to prevent lag
+            var serversToRefresh = servers.Take(10).ToList();
+
+            await InvokeAsync(async () =>
+            {
+                if (_isDisposed)
+                    return;
+
+                foreach (var server in serversToRefresh)
                 {
-                    foreach (var server in serversToRefresh)
+                    try
                     {
-                        try
-                        {
-                            await UpdateServerStatus(server);
-                        }
-                        catch (Exception ex)
-                        {
-                            // Silently handle errors during auto-refresh
-                            Console.WriteLine($"Error refreshing server {server.Name}: {ex.Message}");
-                        }
+                        await UpdateServerStatus(server);
                     }
+                    catch (Exception ex)
+                    {
+                        // Log errors during auto-refresh
+                        Logger.LogWarning(ex, "Error refreshing server {ServerName}", server.Name);
+                    }
+                }
+
+                if (!_isDisposed)
                     StateHasChanged();
-                });
-            }
+            });
         }, null, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
     }
 
     public void Dispose()
     {
+        _isDisposed = true;
         refreshTimer?.Dispose();
     }
 
@@ -383,7 +392,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading servers: {ex.Message}");
+            Logger.LogError(ex, "Error loading servers from localStorage");
         }
     }
 
@@ -396,7 +405,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error saving servers: {ex.Message}");
+            Logger.LogError(ex, "Error saving servers to localStorage");
         }
     }
 
@@ -554,7 +563,7 @@
             await client.SendAsync(infoQuery, infoQuery.Length, endpoint);
             var response = await client.ReceiveAsync();
 
-            Console.WriteLine($"Query response length: {response.Buffer.Length} bytes");
+            Logger.LogDebug("Query response length: {Length} bytes", response.Buffer.Length);
 
             if (response.Buffer.Length > 6)
             {
@@ -565,14 +574,14 @@
                 {
                     offset = 5;
                     var protocol = data[offset++];
-                    Console.WriteLine($"Protocol version: {protocol}");
+                    Logger.LogDebug("Protocol version: {Protocol}", protocol);
 
                     var name = ReadString(data, ref offset);
                     var map = ReadString(data, ref offset);
                     var folder = ReadString(data, ref offset);
                     var game = ReadString(data, ref offset);
 
-                    Console.WriteLine($"Server: {name}, Map: {map}, Game: {game}");
+                    Logger.LogDebug("Server: {Name}, Map: {Map}, Game: {Game}", name, map, game);
 
                     if (offset + 2 < data.Length)
                     {
@@ -582,14 +591,14 @@
                         var maxPlayers = data[offset++];
                         var bots = data[offset++];
 
-                        Console.WriteLine($"Players: {players}/{maxPlayers}, Bots: {bots}");
+                        Logger.LogDebug("Players: {Players}/{MaxPlayers}, Bots: {Bots}", players, maxPlayers, bots);
 
                         offset += 2;
 
                         offset += 2;
 
                         var version = ReadString(data, ref offset);
-                        Console.WriteLine($"Version: {version}");
+                        Logger.LogDebug("Version: {Version}", version);
 
                         return new ServerQueryResult
                         {
@@ -603,7 +612,7 @@
                 }
                 else if (data[4] == 0x41)
                 {
-                    Console.WriteLine("Received challenge response, sending challenge query...");
+                    Logger.LogDebug("Received challenge response, sending challenge query...");
 
                     var challenge = new byte[4];
                     Array.Copy(data, 5, challenge, 0, 4);
@@ -621,7 +630,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Query error for {ip}:{port} - {ex.Message}");
+            Logger.LogWarning(ex, "Query error for {IP}:{Port}", ip, port);
         }
         return null;
     }
@@ -664,7 +673,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error processing info response: {ex.Message}");
+            Logger.LogWarning(ex, "Error processing server info response");
         }
         return null;
     }

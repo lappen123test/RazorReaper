@@ -29,9 +29,11 @@ namespace RazorReaper
                         possiblePaths.Add(Path.Combine(libraryPath, "steamapps", "common", "ARK"));
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-
+                    // If VDF parsing fails, continue with default Steam path only
+                    // Common exceptions: IOException, UnauthorizedAccessException, RegexMatchTimeoutException
+                    System.Diagnostics.Debug.WriteLine($"Failed to parse Steam library folders VDF: {ex.Message}");
                 }
             }
 
@@ -44,7 +46,8 @@ namespace RazorReaper
                 }
             }
 
-            return Path.Combine(steamPath, "steamapps", "common", "ARK");
+            // ARK installation not found in any of the possible paths
+            return null;
         }
 
         public static string? GetBaseDeviceProfilesPath()

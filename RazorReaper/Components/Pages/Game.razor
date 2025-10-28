@@ -208,14 +208,16 @@
             Logger.LogInformation("Executing game command: {Command}", command);
             var processName = Configuration.Value.Ark.GameProcessName;
             Process[] processes = ProcessService.GetProcessesByName(processName);
-            if (processes.Length > 0)
+            try
             {
-                IntPtr gameWindowHandle = processes[0].MainWindowHandle;
+                if (processes.Length > 0)
+                {
+                    IntPtr gameWindowHandle = processes[0].MainWindowHandle;
 
-                ShowWindow(gameWindowHandle, SW_RESTORE);
-                await Task.Delay(100);
-                SetForegroundWindow(gameWindowHandle);
-                await Task.Delay(500);
+                    ShowWindow(gameWindowHandle, SW_RESTORE);
+                    await Task.Delay(100);
+                    SetForegroundWindow(gameWindowHandle);
+                    await Task.Delay(500);
 
                 keybd_event((byte)VK_TAB, 0, 0, UIntPtr.Zero);
                 await Task.Delay(50);
@@ -235,10 +237,19 @@
                 keybd_event((byte)VK_RETURN, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
 
                 NotificationService.ShowSuccess($"Command '{command}' executed successfully");
+                }
+                else
+                {
+                    NotificationService.ShowWarning("ARK: Survival Evolved is not running!");
+                }
             }
-            else
+            finally
             {
-                NotificationService.ShowWarning("ARK: Survival Evolved is not running!");
+                // Dispose all process objects to prevent handle leaks
+                foreach (var process in processes)
+                {
+                    process?.Dispose();
+                }
             }
         }
         catch (Exception ex)
@@ -284,14 +295,25 @@
             Logger.LogInformation("Closing ARK");
             var processName = Configuration.Value.Ark.GameProcessName;
             Process[] processes = ProcessService.GetProcessesByName(processName);
-            foreach (var process in processes)
+            try
             {
-                ProcessService.Kill(process);
-                process.WaitForExit(5000);
-            }
+                foreach (var process in processes)
+                {
+                    ProcessService.Kill(process);
+                    process.WaitForExit(5000);
+                }
 
-            CheckGameStatus();
-            NotificationService.ShowSuccess("ARK: Survival Evolved closed successfully");
+                CheckGameStatus();
+                NotificationService.ShowSuccess("ARK: Survival Evolved closed successfully");
+            }
+            finally
+            {
+                // Dispose all process objects to prevent handle leaks
+                foreach (var process in processes)
+                {
+                    process?.Dispose();
+                }
+            }
         }
         catch (Exception ex)
         {
