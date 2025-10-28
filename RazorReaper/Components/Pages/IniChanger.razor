@@ -11,6 +11,7 @@
 @inject IFileSystemService FileSystem
 @inject ILogger<IniChanger> Logger
 @inject INotificationService NotificationService
+@inject IActivityService ActivityService
 
 <div class="app-container">
     <RazorReaper.Components.Shared.SharedNavbar />
@@ -208,6 +209,7 @@
                 InvokeAsync(() =>
                 {
                     NotificationService.ShowSuccess("INI file loaded successfully.");
+                    ActivityService.AddActivity("INI file loaded successfully", "success");
                     StateHasChanged();
                 });
                 Logger.LogInformation("INI file loaded from: {Path}", iniPath);
@@ -244,6 +246,7 @@
                 {
                     selectedPreset = "";
                     NotificationService.ShowSuccess("INI file content cleared successfully.");
+                    ActivityService.AddActivity("INI file cleared", "warning");
                     StateHasChanged();
                 });
                 Logger.LogInformation("INI file cleared");
@@ -262,6 +265,7 @@
         showImages = false;
         currentIniContent = preset.Content;
         NotificationService.ShowSuccess($"Selected preset: {preset.Name}");
+        ActivityService.AddActivity($"Preset selected: {preset.Name}", "info");
         Logger.LogInformation("Preset selected: {PresetName}", preset.Name);
     }
 
@@ -296,7 +300,11 @@
                 }
 
                 File.WriteAllText(iniPath, currentIniContent, System.Text.Encoding.UTF8);
-                InvokeAsync(() => NotificationService.ShowSuccess("INI file saved successfully!"));
+                InvokeAsync(() =>
+                {
+                    NotificationService.ShowSuccess("INI file saved successfully!");
+                    ActivityService.AddActivity($"INI file saved{(string.IsNullOrEmpty(selectedPreset) ? "" : $" (Preset: {selectedPreset})")}", "success");
+                });
                 Logger.LogInformation("INI file saved to: {Path}", iniPath);
             });
         }
@@ -386,17 +394,29 @@
 
                 if (existingFiles.Count == waterFiles.Length)
                 {
-                    InvokeAsync(() => NotificationService.ShowSuccess($"All water surface files found ({existingFiles.Count} files)\nPath: {waterFilesPath}"));
+                    InvokeAsync(() =>
+                    {
+                        NotificationService.ShowSuccess($"All water surface files found ({existingFiles.Count} files)\nPath: {waterFilesPath}");
+                        ActivityService.AddActivity($"Water files check: All {existingFiles.Count} files found", "success");
+                    });
                     Logger.LogInformation("All water files found at: {Path}", waterFilesPath);
                 }
                 else if (existingFiles.Count > 0)
                 {
-                    InvokeAsync(() => NotificationService.ShowWarning($"Partial water files found ({existingFiles.Count}/{waterFiles.Length} files)\nPath: {waterFilesPath}"));
+                    InvokeAsync(() =>
+                    {
+                        NotificationService.ShowWarning($"Partial water files found ({existingFiles.Count}/{waterFiles.Length} files)\nPath: {waterFilesPath}");
+                        ActivityService.AddActivity($"Water files check: {existingFiles.Count}/{waterFiles.Length} files found", "warning");
+                    });
                     Logger.LogWarning("Partial water files: {Count}/{Total} at {Path}", existingFiles.Count, waterFiles.Length, waterFilesPath);
                 }
                 else
                 {
-                    InvokeAsync(() => NotificationService.ShowInfo($"Water surface already removed (0/{waterFiles.Length} files found)\nPath: {waterFilesPath}"));
+                    InvokeAsync(() =>
+                    {
+                        NotificationService.ShowInfo($"Water surface already removed (0/{waterFiles.Length} files found)\nPath: {waterFilesPath}");
+                        ActivityService.AddActivity("Water files check: Already removed", "info");
+                    });
                     Logger.LogInformation("No water files found - already removed");
                 }
             });
@@ -455,7 +475,11 @@
                 }
 
                 int count = deletedCount;
-                InvokeAsync(() => NotificationService.ShowSuccess($"Successfully deleted {count} water surface file(s)"));
+                InvokeAsync(() =>
+                {
+                    NotificationService.ShowSuccess($"Successfully deleted {count} water surface file(s)");
+                    ActivityService.AddActivity($"Water surface files deleted: {count} file(s)", "success");
+                });
                 Logger.LogInformation("Deleted {Count} water surface files", deletedCount);
             });
         }

@@ -4,6 +4,7 @@
 @using RazorReaper.Components.Shared
 @using RazorReaper.Services
 @inject INotificationService NotificationService
+@inject IActivityService ActivityService
 
 <div class="app-container">
     <RazorReaper.Components.Shared.SharedNavbar />
@@ -294,6 +295,7 @@
                         bUseOldThirdPersonCameraTrace = true;
                         bUseOldThirdPersonCameraOffset = true;
                         NotificationService.ShowSuccess("Camera Trace enabled! Restart ARK to apply changes.");
+                        ActivityService.AddActivity("Camera Trace enabled for TEK suit", "success");
                         StateHasChanged();
                     });
                 }
@@ -340,6 +342,7 @@
                     bUseOldThirdPersonCameraTrace = false;
                     bUseOldThirdPersonCameraOffset = false;
                     NotificationService.ShowWarning("Camera Trace disabled. Restart ARK to apply changes.");
+                    ActivityService.AddActivity("Camera Trace disabled", "warning");
                     StateHasChanged();
                 });
             });

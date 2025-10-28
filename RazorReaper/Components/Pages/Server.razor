@@ -10,6 +10,7 @@
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
 @inject ILogger<Server> Logger
+@inject IActivityService ActivityService
 @implements IDisposable
 
 <div class="app-container">
@@ -728,11 +729,13 @@
                 existing.CurrentMap = currentServer.CurrentMap;
                 existing.Version = currentServer.Version;
                 NotificationService.ShowSuccess($"Server '{currentServer.Name}' updated in local list!");
+                ActivityService.AddActivity($"Server updated: {currentServer.Name}", "info");
             }
             else
             {
                 servers.Add(currentServer);
                 NotificationService.ShowSuccess($"Server '{currentServer.Name}' saved to local list! Total servers: {servers.Count}");
+                ActivityService.AddActivity($"Server saved: {currentServer.Name}", "success");
             }
 
             await SaveServersToStorage();
@@ -748,6 +751,7 @@
     {
         servers.Remove(server);
         await SaveServersToStorage();
+        ActivityService.AddActivity($"Server removed: {server.Name}", "warning");
         if (selectedServer == server)
         {
             selectedServer = null;
@@ -765,6 +769,7 @@
             var steamUrl = $"steam://run/346110//+connect {currentServer.IpAddress}:{currentServer.Port}";
             await JSRuntime.InvokeVoidAsync("window.open", steamUrl, "_blank");
             NotificationService.ShowSuccess("Launching ARK via Steam...");
+            ActivityService.AddActivity($"Connecting to server: {currentServer.Name} ({currentServer.IpAddress})", "success");
         }
         catch (Exception ex)
         {

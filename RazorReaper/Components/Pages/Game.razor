@@ -15,6 +15,7 @@
 @inject IOptions<AppConfiguration> Configuration
 @inject ILogger<Game> Logger
 @inject INotificationService NotificationService
+@inject IActivityService ActivityService
 
 @implements IAsyncDisposable
 
@@ -237,6 +238,7 @@
                 keybd_event((byte)VK_RETURN, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
 
                 NotificationService.ShowSuccess($"Command '{command}' executed successfully");
+                    ActivityService.AddActivity($"Game command executed: {command}", "success");
                 }
                 else
                 {
@@ -305,6 +307,7 @@
 
                 CheckGameStatus();
                 NotificationService.ShowSuccess("ARK: Survival Evolved closed successfully");
+                ActivityService.AddActivity("ARK: Survival Evolved closed", "warning");
             }
             finally
             {

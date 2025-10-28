@@ -3,6 +3,7 @@
 @using RazorReaper.Components.Shared
 @using RazorReaper.Services
 @inject INotificationService NotificationService
+@inject IActivityService ActivityService
 
 <div class="app-container">
     <RazorReaper.Components.Shared.SharedNavbar />
@@ -313,6 +314,7 @@
             });
 
             NotificationService.ShowSuccess("Opened MyPaintings folder successfully!");
+            ActivityService.AddActivity("Opened MyPaintings folder", "success");
             StateHasChanged();
         }
         catch (Exception ex)
@@ -358,6 +360,7 @@
             {
                 Directory.CreateDirectory(folderPath);
                 NotificationService.ShowSuccess("MyPaintings folder created successfully!");
+                ActivityService.AddActivity("MyPaintings folder created", "success");
                 folderExists = true;
                 fileCount = 0;
             }
