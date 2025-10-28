@@ -15,19 +15,19 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; height: calc(100vh - 200px);">
 
             <div class="content-card" style="height: fit-content; overflow: visible;">
-                <h3 class="mb-3 text-red">Delete Texture Files</h3>
+                <h3 class="mb-3">Delete Texture Files</h3>
 
                 <div style="margin-bottom: 2rem;">
                     <p style="color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.6;">
                         Remove Ark's default texture files to achieve a visually bugged black appearance for Tools, Armor, and Weapons. (Some Saddles as well.)
                     </p>
 
-                    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                    <div class="warning-box">
                         <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-                            <svg style="width: 20px; height: 20px; color: var(--accent-red); margin-right: 0.5rem;" fill="currentColor" viewBox="0 0 20 20">
+                            <svg style="width: 20px; height: 20px; color: var(--accent-purple); margin-right: 0.5rem;" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
                             </svg>
-                            <strong style="color: var(--accent-red);">Warning</strong>
+                            <strong style="color: var(--accent-purple);">Warning</strong>
                         </div>
                         <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">
                             This action will permanently delete texture files from your ARK installation.
@@ -92,15 +92,22 @@
 
                 @if (!string.IsNullOrEmpty(arkPath))
                 {
-                    <div class="mt-3" style="padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border-left: 3px solid var(--accent-green);">
-                        <div style="color: var(--accent-green); font-weight: 600; margin-bottom: 0.5rem;">ARK Installation Found:</div>
-                        <div style="color: var(--text-secondary); font-size: 0.85rem; word-break: break-all;">@arkPath</div>
+                    <div class="pixel-path-card">
+                        <div class="path-icon-small">
+                            <svg fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <div style="color: var(--accent-purple); font-weight: 600; font-size: 0.85rem; margin-bottom: 0.25rem;">ARK Installation</div>
+                            <div style="color: var(--text-secondary); font-size: 0.8rem; word-break: break-all; font-family: 'Courier New', monospace;">@arkPath</div>
+                        </div>
                     </div>
                 }
             </div>
 
             <div class="content-card" style="height: fit-content;">
-                <h3 class="mb-3 text-green">Repair Game Files</h3>
+                <h3 class="mb-3">Repair Game Files</h3>
 
                 <div style="margin-bottom: 2rem;">
                     <p style="color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.6;">
@@ -114,19 +121,19 @@
                     </div>
                 </div>
 
-                <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;">
-                    <h4 style="color: var(--accent-green); margin-bottom: 1rem; font-weight: 600;">Repair Process</h4>
+                <div class="repair-process-box">
+                    <h4 style="color: var(--accent-purple); margin-bottom: 1rem; font-weight: 600;">Repair Process</h4>
                     <div style="display: grid; gap: 1rem;">
                         <div style="display: flex; align-items: center;">
-                            <div style="width: 24px; height: 24px; background: var(--accent-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 0.75rem; font-size: 0.8rem; font-weight: bold; color: white;">1</div>
+                            <div class="step-number">1</div>
                             <span style="color: var(--text-secondary); font-size: 0.9rem;">Click "Start Verify Integrity" button</span>
                         </div>
                         <div style="display: flex; align-items: center;">
-                            <div style="width: 24px; height: 24px; background: var(--accent-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 0.75rem; font-size: 0.8rem; font-weight: bold; color: white;">2</div>
+                            <div class="step-number">2</div>
                             <span style="color: var(--text-secondary); font-size: 0.9rem;">Steam will automatically verify ARK files</span>
                         </div>
                         <div style="display: flex; align-items: center;">
-                            <div style="width: 24px; height: 24px; background: var(--accent-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 0.75rem; font-size: 0.8rem; font-weight: bold; color: white;">3</div>
+                            <div class="step-number">3</div>
                             <span style="color: var(--text-secondary); font-size: 0.9rem;">Deleted files will be redownloaded</span>
                         </div>
                     </div>
@@ -163,12 +170,69 @@
         border: 1px solid var(--border-color);
     }
 
-    .text-red {
-        color: var(--accent-red);
+    .warning-box {
+        background: rgba(139, 92, 246, 0.1);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
     }
 
-    .text-green {
-        color: var(--accent-green);
+    .pixel-path-card {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05));
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        transition: all 0.3s ease;
+    }
+
+    .pixel-path-card:hover {
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.08));
+        border-color: var(--accent-purple);
+    }
+
+    .path-icon-small {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: rgba(139, 92, 246, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .path-icon-small svg {
+        width: 16px;
+        height: 16px;
+        color: var(--accent-purple);
+    }
+
+    .repair-process-box {
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.08));
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .step-number {
+        width: 24px;
+        height: 24px;
+        background: var(--accent-purple);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0.75rem;
+        font-size: 0.8rem;
+        font-weight: bold;
+        color: white;
+        flex-shrink: 0;
     }
 
     .dropdown-container {
@@ -192,7 +256,7 @@
 
     .dropdown-toggle:hover {
         background: rgba(0, 0, 0, 0.6);
-        border-color: #3a3a3a;
+        border-color: rgba(139, 92, 246, 0.3);
     }
 
     .dropdown-menu {
@@ -223,23 +287,23 @@
     }
 
     .dropdown-menu::-webkit-scrollbar-thumb {
-        background: #444444;
+        background: var(--accent-purple);
         border-radius: 5px;
         transition: background 0.3s ease;
     }
 
     .dropdown-menu::-webkit-scrollbar-thumb:hover {
-        background: #555555;
+        background: var(--accent-purple-light);
     }
 
     .dropdown-menu::-webkit-scrollbar-thumb:active {
-        background: #666666;
+        background: var(--accent-purple-dark);
     }
 
     /* Firefox scrollbar */
     .dropdown-menu {
         scrollbar-width: thin;
-        scrollbar-color: #444444 rgba(0, 0, 0, 0.5);
+        scrollbar-color: var(--accent-purple) rgba(0, 0, 0, 0.5);
     }
 
     @@keyframes dropdown-slide {
@@ -275,9 +339,9 @@
     }
 
     .dropdown-control-btn:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: #4a4a4a;
-        color: #ffffff;
+        background: rgba(139, 92, 246, 0.1);
+        border-color: var(--accent-purple);
+        color: var(--accent-purple);
     }
 
     .dropdown-item {
@@ -302,7 +366,7 @@
         height: 18px;
         margin-right: 0.75rem;
         cursor: pointer;
-        accent-color: #888888;
+        accent-color: var(--accent-purple);
     }
 
     .dropdown-item span {
@@ -322,13 +386,13 @@
     .info-icon {
         width: 18px;
         height: 18px;
-        color: #666666;
+        color: rgba(139, 92, 246, 0.6);
         cursor: help;
         transition: color 0.2s ease;
     }
 
     .info-icon:hover {
-        color: #999999;
+        color: var(--accent-purple);
     }
 
     .info-tooltip {
@@ -366,12 +430,12 @@
     }
 
     .info-tooltip::-webkit-scrollbar-thumb {
-        background: #444444;
+        background: var(--accent-purple);
         border-radius: 3px;
     }
 
     .info-tooltip::-webkit-scrollbar-thumb:hover {
-        background: #555555;
+        background: var(--accent-purple-light);
     }
 
     .info-icon-container:hover .info-tooltip,
@@ -609,31 +673,16 @@
 
     private string GetStatusBackgroundColor()
     {
-        if (statusMessage.Contains("Error") || statusMessage.Contains("not found"))
-            return "rgba(239, 68, 68, 0.1)";
-        else if (statusMessage.Contains("deleted") || statusMessage.Contains("Opened"))
-            return "rgba(16, 185, 129, 0.1)";
-        else
-            return "rgba(245, 158, 11, 0.1)";
+        return "rgba(139, 92, 246, 0.1)";
     }
 
     private string GetStatusBorderColor()
     {
-        if (statusMessage.Contains("Error") || statusMessage.Contains("not found"))
-            return "var(--accent-red)";
-        else if (statusMessage.Contains("deleted") || statusMessage.Contains("Opened"))
-            return "var(--accent-green)";
-        else
-            return "var(--accent-orange)";
+        return "var(--accent-purple)";
     }
 
     private string GetStatusTextColor()
     {
-        if (statusMessage.Contains("Error") || statusMessage.Contains("not found"))
-            return "var(--accent-red)";
-        else if (statusMessage.Contains("deleted") || statusMessage.Contains("Opened"))
-            return "var(--accent-green)";
-        else
-            return "var(--accent-orange)";
+        return "var(--accent-purple)";
     }
 }

@@ -132,48 +132,60 @@
                     </svg>
                     <h3>System Resources</h3>
                 </div>
-                <div class="resource-stats">
-                    <div class="resource-item">
-                        <div class="resource-header">
-                            <span class="resource-label">CPU</span>
-                            <span class="resource-value">@cpuUsage%</span>
-                        </div>
-                        <div class="resource-bar">
-                            <div class="resource-fill cpu" style="width: @cpuUsage%"></div>
-                        </div>
-                    </div>
-                    @if (hasGpuCounter)
-                    {
+                @if (resourceMonitoringInitialized)
+                {
+                    <div class="resource-stats">
                         <div class="resource-item">
                             <div class="resource-header">
-                                <span class="resource-label">GPU</span>
-                                <span class="resource-value">@gpuUsage%</span>
+                                <span class="resource-label">CPU Usage</span>
+                                <span class="resource-value">@cpuUsage%</span>
                             </div>
                             <div class="resource-bar">
-                                <div class="resource-fill gpu" style="width: @gpuUsage%"></div>
+                                <div class="resource-fill cpu" style="width: @Math.Min(cpuUsage, 100)%"></div>
                             </div>
                         </div>
-                    }
-                    <div class="resource-item">
-                        <div class="resource-header">
-                            <span class="resource-label">RAM</span>
-                            <span class="resource-value">@ramUsage%</span>
+                        @if (hasGpuCounter)
+                        {
+                            <div class="resource-item">
+                                <div class="resource-header">
+                                    <span class="resource-label">GPU Usage</span>
+                                    <span class="resource-value">@gpuUsage%</span>
+                                </div>
+                                <div class="resource-bar">
+                                    <div class="resource-fill gpu" style="width: @Math.Min(gpuUsage, 100)%"></div>
+                                </div>
+                            </div>
+                        }
+                        <div class="resource-item">
+                            <div class="resource-header">
+                                <span class="resource-label">RAM Usage</span>
+                                <span class="resource-value">@ramUsage%</span>
+                            </div>
+                            <div class="resource-bar">
+                                <div class="resource-fill ram" style="width: @Math.Min(ramUsage, 100)%"></div>
+                            </div>
                         </div>
-                        <div class="resource-bar">
-                            <div class="resource-fill ram" style="width: @ramUsage%"></div>
+                        <div class="resource-info">
+                            <div class="resource-detail">
+                                <span>Total Memory:</span>
+                                <span>@ramUsedGB GB / @ramTotalGB GB</span>
+                            </div>
+                            <div class="resource-detail">
+                                <span>App Usage:</span>
+                                <span>@processMemoryMB MB</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="resource-info">
-                        <div class="resource-detail">
-                            <span>Memory Used:</span>
-                            <span>@ramUsedGB GB / @ramTotalGB GB</span>
-                        </div>
-                        <div class="resource-detail">
-                            <span>Process:</span>
-                            <span>@processMemoryMB MB</span>
-                        </div>
+                }
+                else
+                {
+                    <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                        <svg fill="currentColor" viewBox="0 0 20 20" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;">
+                            <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                        </svg>
+                        <p>Initializing system monitoring...</p>
                     </div>
-                </div>
+                }
             </div>
 
             <div class="content-card widget-card wifi-widget">
@@ -601,16 +613,16 @@
             // Mark initialization as complete
             resourceMonitoringInitialized = true;
 
-            // Start monitoring timer (3 seconds for good balance between responsiveness and performance)
-            resourceTimer = new System.Timers.Timer(3000);
+            // Do an immediate first update to show data right away
+            UpdateResources(null, null!);
+
+            // Start monitoring timer (2 seconds for better responsiveness)
+            resourceTimer = new System.Timers.Timer(2000);
             resourceTimer.Elapsed += UpdateResources;
             resourceTimer.Start();
 
             Logger.LogInformation("Resource monitoring started: {TotalRAM} GB total RAM, GPU monitoring: {HasGPU} with {GPUCount} engines",
                 ramTotalGB, hasGpuCounter, gpuCounters.Count);
-
-            // Force first update after initialization
-            InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
@@ -627,11 +639,13 @@
 
         try
         {
-            // Get CPU usage
-            cpuUsage = (int)Math.Round(cpuCounter?.NextValue() ?? 0);
+            // Get CPU usage - ensure it's between 0-100
+            var cpuValue = cpuCounter?.NextValue() ?? 0;
+            cpuUsage = (int)Math.Round(Math.Clamp(cpuValue, 0, 100));
 
-            // Get RAM usage
-            ramUsage = (int)Math.Round(ramCounter?.NextValue() ?? 0);
+            // Get RAM usage - ensure it's between 0-100
+            var ramValue = ramCounter?.NextValue() ?? 0;
+            ramUsage = (int)Math.Round(Math.Clamp(ramValue, 0, 100));
 
             // Get GPU usage - read from pre-created counters and calculate average for better accuracy
             if (hasGpuCounter && gpuCounters.Count > 0)
@@ -658,17 +672,18 @@
                     if (validCounters > 0)
                     {
                         // Average all GPU 3D engines for more accurate representation
-                        gpuUsage = (int)Math.Round(totalGpu / validCounters);
+                        var avgGpu = totalGpu / validCounters;
+                        gpuUsage = (int)Math.Round(Math.Clamp(avgGpu, 0, 100));
                     }
                 }
                 catch (Exception gpuEx)
                 {
                     Logger.LogDebug(gpuEx, "Error reading GPU usage");
+                    gpuUsage = 0;
                 }
             }
 
             // Calculate used RAM
-            var totalMemory = (long)(ramTotalGB * 1024.0 * 1024.0 * 1024.0);
             ramUsedGB = Math.Round((ramUsage / 100.0) * ramTotalGB, 2);
 
             // Get current process memory - use cached process to avoid lag
@@ -687,6 +702,10 @@
                     processMemoryMB = Math.Round(currentProcess.WorkingSet64 / 1024.0 / 1024.0, 1);
                 }
             }
+
+            // Log resource usage periodically for debugging
+            Logger.LogTrace("Resource Update - CPU: {CPU}%, RAM: {RAM}%, GPU: {GPU}%, Process: {Process}MB",
+                cpuUsage, ramUsage, gpuUsage, processMemoryMB);
 
             if (!_isDisposed)
                 InvokeAsync(StateHasChanged);

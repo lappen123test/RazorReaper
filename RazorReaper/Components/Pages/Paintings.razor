@@ -37,13 +37,16 @@
 
                 @if (!string.IsNullOrEmpty(arkPath))
                 {
-                    <div class="mt-3 ark-path-info">
-                        <div style="color: var(--accent-green); font-weight: 600; margin-bottom: 0.5rem;">ARK Installation Found:</div>
-                        <div style="color: var(--text-secondary); font-size: 0.85rem; word-break: break-all;">@arkPath</div>
-                        @if (fileCount > 0)
-                        {
-                            <div style="color: var(--accent-green); font-size: 0.85rem; margin-top: 0.5rem;">📁 @fileCount painting files found</div>
-                        }
+                    <div class="paintings-stats-card">
+                        <div class="stats-icon">
+                            <svg fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="stats-content">
+                            <div class="stats-value">@fileCount</div>
+                            <div class="stats-label">Canvas Files</div>
+                        </div>
                     </div>
                 }
             </div>
@@ -198,41 +201,63 @@
             border: 1px solid var(--text-primary);
         }
 
-    .status-message {
-        padding: 1rem;
-        border-radius: 8px;
-        border-left: 3px solid;
+    /* Status messages removed - using global notification system */
+
+    .paintings-stats-card {
+        margin-top: 1.5rem;
+        padding: 1.25rem;
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.08));
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.3s ease;
     }
 
-    .status-success {
-        background: rgba(16, 185, 129, 0.1);
-        border-color: var(--accent-green);
-        color: var(--accent-green);
+    .paintings-stats-card:hover {
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.12));
+        border-color: var(--accent-purple);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
     }
 
-    .status-error {
-        background: rgba(239, 68, 68, 0.1);
-        border-color: var(--accent-red);
-        color: var(--accent-red);
+    .stats-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(139, 92, 246, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
     }
 
-    .status-warning {
-        background: rgba(245, 158, 11, 0.1);
-        border-color: var(--accent-orange);
-        color: var(--accent-orange);
+    .stats-icon svg {
+        width: 24px;
+        height: 24px;
+        color: var(--accent-purple);
     }
 
-    .status-info {
-        background: rgba(59, 130, 246, 0.1);
-        border-color: var(--accent-blue);
-        color: var(--accent-blue);
+    .stats-content {
+        flex: 1;
     }
 
-    .ark-path-info {
-        padding: 1rem;
-        background: rgba(16, 185, 129, 0.1);
-        border-radius: 8px;
-        border-left: 3px solid var(--accent-green);
+    .stats-value {
+        font-size: 2rem;
+        font-weight: 700;
+        background: var(--gradient-purple);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1;
+        margin-bottom: 0.25rem;
+    }
+
+    .stats-label {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        font-weight: 600;
     }
 
     .canvas-guide {
