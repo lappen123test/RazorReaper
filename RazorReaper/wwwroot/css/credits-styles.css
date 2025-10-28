@@ -13,16 +13,7 @@
     gap: 1.5rem;
 }
 
-.credits-layout .content-card {
-    animation: fadeInUp 0.6s ease-out;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-    .credits-layout .content-card:hover {
-        border-color: rgba(139, 92, 246, 0.3) !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
-    }
+/* Content cards inherit from global theme.css */
 
 .developer-info {
     display: flex;
@@ -534,13 +525,4 @@
     }
 }
 
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
+/* fadeInUp animation defined in global theme.css */
