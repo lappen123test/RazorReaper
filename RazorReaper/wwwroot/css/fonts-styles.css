@@ -1,0 +1,440 @@
+.fonts-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 1.5rem;
+}
+
+.fonts-layout .fonts-operations-panel {
+    height: fit-content;
+    position: sticky;
+    top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.fonts-layout .font-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.fonts-layout .font-option-btn {
+    background: rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 0.85rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.fonts-layout .font-option-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+    transition: left 0.5s ease;
+}
+
+.fonts-layout .font-option-btn:hover::before {
+    left: 100%;
+}
+
+.fonts-layout .font-option-btn:hover {
+    background: rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(12px);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+.fonts-layout .font-option-btn.active {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(139, 92, 246, 0.06));
+    backdrop-filter: blur(12px);
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+}
+
+.fonts-layout .font-option-btn.active::after {
+    content: '✓';
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    color: var(--accent-purple);
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.fonts-layout .font-option-name {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 0.85rem;
+}
+
+.fonts-layout .font-option-description {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    line-height: 1.3;
+}
+
+.fonts-layout .installation-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.fonts-layout .fonts-btn {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    padding: 0.7rem 0.9rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    backdrop-filter: blur(5px);
+}
+
+.fonts-layout .fonts-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.fonts-layout .fonts-btn:hover::before {
+    left: 100%;
+}
+
+.fonts-layout .fonts-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.fonts-layout .fonts-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.fonts-layout .fonts-btn svg {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+}
+
+.fonts-layout .fonts-btn:hover:not(:disabled) svg {
+    transform: scale(1.1);
+}
+
+.fonts-layout .fonts-main-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+
+.fonts-layout .info-box {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.fonts-layout .info-box strong {
+    color: var(--text-primary);
+}
+
+.fonts-layout .setup-section {
+    margin-bottom: 2rem;
+}
+
+.fonts-layout .setup-section:last-child {
+    margin-bottom: 0;
+}
+
+/* Ensure consistent bottom spacing in all font cards */
+.fonts-layout .content-card {
+    padding-bottom: 4rem !important;
+    overflow: visible !important;
+    height: auto !important;
+}
+
+.fonts-layout .content-card > *:last-child {
+    margin-bottom: 0 !important;
+}
+
+.fonts-layout .instruction-list {
+    margin-bottom: 0 !important;
+}
+
+.fonts-layout .setup-section h4 {
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.fonts-layout .instruction-list {
+    margin: 0;
+    padding-left: 1.5rem;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    line-height: 1.8;
+}
+
+.fonts-layout .instruction-list li {
+    margin-bottom: 0.75rem;
+}
+
+.fonts-layout .instruction-list li:last-child {
+    margin-bottom: 0;
+}
+
+.fonts-layout .path-display {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem;
+    word-break: break-all;
+    color: #a78bfa;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.fonts-layout .path-display.clickable {
+    cursor: pointer;
+}
+
+.fonts-layout .path-display.clickable:hover {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+    transform: translateY(-1px);
+}
+
+.fonts-layout .path-display.clickable:active {
+    transform: translateY(0);
+}
+
+.fonts-layout .code-display {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    color: #60a5fa;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.fonts-layout .code-display code {
+    color: #60a5fa;
+}
+
+.fonts-layout .code-display.clickable {
+    cursor: pointer;
+}
+
+.fonts-layout .code-display.clickable:hover {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+    transform: translateY(-1px);
+}
+
+.fonts-layout .code-display.clickable:active {
+    transform: translateY(0);
+}
+
+.fonts-layout .code-display-grey {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.fonts-layout .code-display-grey code {
+    color: #d1d5db;
+}
+
+.fonts-layout .code-display-grey.clickable {
+    cursor: pointer;
+}
+
+.fonts-layout .code-display-grey.clickable:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+    transform: translateY(-1px);
+}
+
+.fonts-layout .code-display-grey.clickable:active {
+    transform: translateY(0);
+}
+
+.fonts-layout .success-banner {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(59, 130, 246, 0.12));
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1.5rem;
+    text-align: center;
+    font-weight: 600;
+    color: #a78bfa;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
+    backdrop-filter: blur(10px);
+    font-size: 0.85rem;
+}
+
+.fonts-layout .icon-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.fonts-layout .icon-circle.white {
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.fonts-layout .icon-circle svg {
+    width: 24px;
+    height: 24px;
+    color: var(--text-primary);
+}
+
+.fonts-layout .section-info {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.fonts-layout .section-description {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+    .fonts-layout {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        height: auto;
+    }
+
+    .fonts-layout .fonts-operations-panel {
+        position: relative;
+        top: 0;
+    }
+
+    .fonts-layout .fonts-btn {
+        justify-content: center;
+    }
+
+    .fonts-layout .instruction-list {
+        font-size: 0.75rem;
+        padding-left: 1.2rem;
+    }
+
+    .fonts-layout .path-display,
+    .fonts-layout .code-display {
+        font-size: 0.7rem;
+        padding: 0.6rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .fonts-layout {
+        gap: 0.8rem;
+    }
+
+    .fonts-layout .fonts-btn {
+        padding: 0.8rem;
+        font-size: 0.75rem;
+    }
+
+    .fonts-layout .font-option-btn {
+        padding: 0.75rem;
+    }
+
+    .fonts-layout .font-option-name {
+        font-size: 0.8rem;
+    }
+
+    .fonts-layout .font-option-description {
+        font-size: 0.7rem;
+    }
+
+    .fonts-layout .setup-section h4 {
+        font-size: 0.9rem;
+    }
+
+    .fonts-layout .instruction-list {
+        font-size: 0.72rem;
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

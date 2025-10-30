@@ -1,0 +1,623 @@
+@page "/fonts"
+@using Microsoft.Win32
+@using System.IO
+@using System.IO.Compression
+@using Microsoft.Extensions.Logging
+@using RazorReaper.Components.Shared
+@using RazorReaper.Services
+
+@inject ILogger<Fonts> Logger
+@inject INotificationService NotificationService
+@inject IActivityService ActivityService
+
+<div class="app-container">
+    <RazorReaper.Components.Shared.SharedNavbar />
+
+    <main class="main-content">
+        <header class="page-header">
+            <h1 class="page-title">Game Fonts</h1>
+            <p class="page-subtitle">Customize ARK: Survival Evolved font settings</p>
+        </header>
+
+        <div class="fonts-layout">
+            <div class="fonts-operations-panel">
+                <div class="content-card">
+                    <div class="section-info">
+                        <div class="icon-circle white">
+                            <svg fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3>Font Selection</h3>
+                            <p class="section-description">Choose your preferred in-game font</p>
+                        </div>
+                    </div>
+
+                    <div class="font-options">
+                        <button class="font-option-btn @(selectedFont == "default" ? "active" : "")"
+                                @onclick="@(() => SelectFont("default"))">
+                            <div class="font-option-name">Game Default</div>
+                            <div class="font-option-description">Standard ARK font</div>
+                        </button>
+
+                        <button class="font-option-btn @(selectedFont == "chinese" ? "active" : "")"
+                                @onclick="@(() => SelectFont("chinese"))">
+                            <div class="font-option-name">Asian Font</div>
+                            <div class="font-option-description">Asian localization font</div>
+                        </button>
+
+                        <button class="font-option-btn @(selectedFont == "global" ? "active" : "")"
+                                @onclick="@(() => SelectFont("global"))">
+                            <div class="font-option-name">Global Font</div>
+                            <div class="font-option-description">Enhanced custom font</div>
+                        </button>
+                    </div>
+                </div>
+
+                @if (selectedFont == "chinese")
+                {
+                    <div class="content-card">
+                        <div class="section-info">
+                            <div class="icon-circle white">
+                                <svg fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3>Installation</h3>
+                                <p class="section-description">Automated setup</p>
+                            </div>
+                        </div>
+
+                        <div class="installation-options">
+                            <button class="fonts-btn" @onclick="AutoInstallChineseFont" disabled="@isInstalling">
+                                <svg fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                                </svg>
+                                @(isInstalling ? "Installing..." : "Auto Install")
+                            </button>
+
+                            <button class="fonts-btn" @onclick="OpenFontFolderInExplorer">
+                                <svg fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                                </svg>
+                                Open Font Folder
+                            </button>
+                        </div>
+                    </div>
+                }
+                else if (selectedFont == "global")
+                {
+                    <div class="content-card">
+                        <div class="section-info">
+                            <div class="icon-circle white">
+                                <svg fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3>Installation</h3>
+                                <p class="section-description">Automated or manual setup</p>
+                            </div>
+                        </div>
+
+                        <div class="installation-options">
+                            <button class="fonts-btn" @onclick="AutoInstallGlobalFont" disabled="@isInstalling">
+                                <svg fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                                </svg>
+                                @(isInstalling ? "Installing..." : "Auto Install")
+                            </button>
+
+                            <button class="fonts-btn" @onclick="DownloadGlobalFont">
+                                <svg fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                                Download Only
+                            </button>
+
+                            <button class="fonts-btn" @onclick="OpenFontFolderInExplorer">
+                                <svg fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                                </svg>
+                                Open Font Folder
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="fonts-main-column">
+                @if (selectedFont == "default")
+                {
+                    <div class="content-card">
+                        <h3>Game Default Font</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.85rem; line-height: 1.6;">
+                            The standard ARK: Survival Evolved font. Clean, simple, and built-in.
+                        </p>
+
+                        <div class="setup-section">
+                            <h4>✨ How to Enable</h4>
+                            <ol class="instruction-list" style="margin: 0;">
+                                <li>Open Steam → Right-click ARK → Properties</li>
+                                <li>Under <strong>General</strong> tab, find <strong>Launch Options</strong></li>
+                                <li>Remove any font commands:</li>
+                            </ol>
+
+                            <div style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                                <div class="code-display">
+                                    <code style="color: #fb923c;">-culture=Global</code>
+                                </div>
+                                <div class="code-display">
+                                    <code style="color: #fb923c;">-culture=zh-Hans-CN</code>
+                                </div>
+                            </div>
+
+                            <ol class="instruction-list" style="margin-top: 0.75rem;" start="4">
+                                <li>Restart ARK - Done!</li>
+                            </ol>
+                        </div>
+
+                        <div class="info-box" style="margin-top: 1rem;">
+                            <strong style="color: var(--accent-purple);">💡 Tip:</strong> You can keep other launch options (like -lowmemory, -nomansky, etc). Just remove culture commands.
+                        </div>
+                    </div>
+                }
+                else if (selectedFont == "chinese")
+                {
+                    <div class="content-card">
+                        <h3>Asian Font Setup</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.85rem; line-height: 1.6;">
+                            This font uses ARK's Asian localization files to change the in-game font appearance.
+                        </p>
+
+                        <div class="setup-section">
+                            <h4>🚀 Easy Installation</h4>
+                            <ol class="instruction-list" style="margin: 0;">
+                                <li>Click <strong>"Auto Install"</strong> button</li>
+                                <li>Open Steam → Right-click ARK → Properties</li>
+                                <li>Under General tab, find <strong>Launch Options</strong></li>
+                                <li>
+                                    Type this:
+                                    <div class="code-display clickable" @onclick="@(() => CopyChineseLaunchOptionToClipboard())">
+                                        <code>-culture=zh-Hans-CN</code>
+                                    </div>
+                                </li>
+                                <li>Restart ARK - Done!</li>
+                            </ol>
+                        </div>
+
+                        <div class="info-box" style="margin-top: 1rem;">
+                            <strong>How it works:</strong> This copies English localization files to the Asian locale folder, which changes the font while keeping text in English.
+                        </div>
+                    </div>
+                }
+                else if (selectedFont == "global")
+                {
+                    <div class="content-card">
+                        <h3>Global Font Setup</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.85rem; line-height: 1.6;">
+                            The Global font provides an enhanced visual experience. Follow the steps below to install.
+                        </p>
+
+                        <div class="setup-section">
+                            <h4>🚀 Easy Installation</h4>
+                            <ol class="instruction-list" style="margin: 0;">
+                                <li>Click <strong>"Auto Install"</strong> button</li>
+                                <li>Open Steam → Right-click ARK → Properties</li>
+                                <li>Under General tab, find <strong>Launch Options</strong></li>
+                                <li>
+                                    Type this:
+                                    <div class="code-display clickable" @onclick="@(() => CopyLaunchOptionToClipboard())">
+                                        <code>culture=Global</code>
+                                    </div>
+                                </li>
+                                <li>Restart ARK - Done!</li>
+                            </ol>
+                        </div>
+
+                        <div class="setup-section">
+                            <h4>📝 Manual Installation</h4>
+                            <ol class="instruction-list">
+                                <li>Click "Download Only" button</li>
+                                <li>
+                                    Place <code>Global</code> folder in:
+                                    <div class="path-display clickable" @onclick="@(() => CopyPathToClipboard())">
+                                        @if (!string.IsNullOrEmpty(arkPath))
+                                        {
+                                            <span>@Path.Combine(arkPath, "ShooterGame", "Content", "Localization", "Game")</span>
+                                        }
+                                        else
+                                        {
+                                            <span>ARK\ShooterGame\Content\Localization\Game</span>
+                                        }
+                                    </div>
+                                </li>
+                                <li>In Steam: Right-click ARK → Properties → Launch Options</li>
+                                <li>
+                                    Type this:
+                                    <div class="code-display clickable" @onclick="@(() => CopyLaunchOptionToClipboard())">
+                                        <code>culture=Global</code>
+                                    </div>
+                                </li>
+                                <li>Restart ARK</li>
+                            </ol>
+                        </div>
+
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div style="height: 2rem;"></div>
+    </main>
+</div>
+
+@code {
+    private string selectedFont = "default";
+    private string arkPath = "";
+    private bool isInstalling = false;
+
+    protected override void OnInitialized()
+    {
+        arkPath = ArkUtilities.FindArkPath() ?? "";
+    }
+
+    private void SelectFont(string fontType)
+    {
+        selectedFont = fontType;
+        NotificationService.ShowSuccess($"Selected: {GetFontDisplayName(fontType)}");
+        ActivityService.AddActivity($"Font selected: {GetFontDisplayName(fontType)}", "info");
+        Logger.LogInformation("Font selected: {FontType}", fontType);
+    }
+
+    private string GetFontDisplayName(string fontType)
+    {
+        return fontType switch
+        {
+            "default" => "Game Default",
+            "chinese" => "Asian Font",
+            "global" => "Global Font",
+            _ => fontType
+        };
+    }
+
+    private async Task AutoInstallGlobalFont()
+    {
+        try
+        {
+            isInstalling = true;
+            StateHasChanged();
+
+            Logger.LogInformation("Starting automatic Global font installation");
+
+            await Task.Run(async () =>
+            {
+                if (string.IsNullOrEmpty(arkPath))
+                {
+                    InvokeAsync(() => NotificationService.ShowError("ARK installation not found!"));
+                    return;
+                }
+
+                // Extract the bundled Global font
+                InvokeAsync(() => NotificationService.ShowInfo("Extracting Global font..."));
+
+                string tempPath = Path.Combine(Path.GetTempPath(), "GlobalFont_" + Guid.NewGuid().ToString("N"));
+                if (Directory.Exists(tempPath))
+                {
+                    Directory.Delete(tempPath, true);
+                }
+                Directory.CreateDirectory(tempPath);
+
+                try
+                {
+                    // Load the bundled zip file from wwwroot
+                    string zipPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "assets", "fonts", "Global.zip");
+
+                    if (!File.Exists(zipPath))
+                    {
+                        InvokeAsync(() => NotificationService.ShowError("Global font package not found in app resources. Please ensure Global.zip exists in wwwroot/assets/fonts/"));
+                        Logger.LogError("Global.zip not found at: {Path}", zipPath);
+                        return;
+                    }
+
+                    // Extract the zip file
+                    ZipFile.ExtractToDirectory(zipPath, tempPath);
+                    Logger.LogInformation("Extracted Global font to temp: {Path}", tempPath);
+
+                    // Find the Global folder (it should be at the root of the zip)
+                    string globalFolderPath = Path.Combine(tempPath, "Global");
+                    if (!Directory.Exists(globalFolderPath))
+                    {
+                        // Check if Global is the only folder in temp
+                        var dirs = Directory.GetDirectories(tempPath);
+                        if (dirs.Length == 1)
+                        {
+                            globalFolderPath = dirs[0];
+                        }
+                        else
+                        {
+                            InvokeAsync(() => NotificationService.ShowError("Invalid Global font package structure."));
+                            return;
+                        }
+                    }
+
+                    InvokeAsync(() => NotificationService.ShowInfo("Installing font files..."));
+
+                    // Copy to ARK directory
+                    string targetPath = Path.Combine(arkPath, "ShooterGame", "Content", "Localization", "Game", "Global");
+
+                    if (Directory.Exists(targetPath))
+                    {
+                        Directory.Delete(targetPath, true);
+                    }
+
+                    CopyDirectory(globalFolderPath, targetPath);
+
+                    // Show simple success notification
+                    InvokeAsync(() =>
+                    {
+                        NotificationService.ShowSuccess("✅ Font files installed!\n\nNow set Steam launch option (see instructions).");
+                        ActivityService.AddActivity("Global font installed", "success");
+                        StateHasChanged();
+                    });
+
+                    Logger.LogInformation("Global font installed to: {Path}", targetPath);
+                }
+                finally
+                {
+                    // Clean up temp directory
+                    try
+                    {
+                        if (Directory.Exists(tempPath))
+                        {
+                            Directory.Delete(tempPath, true);
+                        }
+                    }
+                    catch (Exception cleanupEx)
+                    {
+                        Logger.LogWarning(cleanupEx, "Failed to clean up temp directory: {Path}", tempPath);
+                    }
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error installing Global font");
+            NotificationService.ShowError($"Installation failed: {ex.Message}");
+        }
+        finally
+        {
+            isInstalling = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DownloadGlobalFont()
+    {
+        try
+        {
+            Logger.LogInformation("Downloading Global font for manual installation");
+
+            await Task.Run(() =>
+            {
+                string downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+                string zipPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "assets", "fonts", "Global.zip");
+
+                if (!File.Exists(zipPath))
+                {
+                    InvokeAsync(() => NotificationService.ShowError("Global font package not found in app resources. Please ensure Global.zip exists in wwwroot/assets/fonts/"));
+                    Logger.LogError("Global.zip not found at: {Path}", zipPath);
+                    return;
+                }
+
+                // Copy the zip file to Downloads
+                string destZipPath = Path.Combine(downloadsPath, "ARK_GlobalFont.zip");
+                File.Copy(zipPath, destZipPath, true);
+
+                // Also extract it for convenience
+                string extractPath = Path.Combine(downloadsPath, "ARK_GlobalFont");
+                if (Directory.Exists(extractPath))
+                {
+                    Directory.Delete(extractPath, true);
+                }
+                Directory.CreateDirectory(extractPath);
+
+                ZipFile.ExtractToDirectory(zipPath, extractPath);
+
+                InvokeAsync(() =>
+                {
+                    NotificationService.ShowSuccess($"Global font downloaded to:\n{extractPath}\n\nZip file also saved as:\n{destZipPath}");
+                    ActivityService.AddActivity("Global font downloaded", "success");
+                });
+
+                Logger.LogInformation("Global font downloaded to: {Path}", extractPath);
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error downloading Global font");
+            NotificationService.ShowError($"Download failed: {ex.Message}");
+        }
+    }
+
+    private async Task AutoInstallChineseFont()
+    {
+        try
+        {
+            isInstalling = true;
+            StateHasChanged();
+
+            Logger.LogInformation("Starting automatic Asian font installation");
+
+            await Task.Run(async () =>
+            {
+                if (string.IsNullOrEmpty(arkPath))
+                {
+                    InvokeAsync(() => NotificationService.ShowError("ARK installation not found!"));
+                    return;
+                }
+
+                InvokeAsync(() => NotificationService.ShowInfo("Copying localization files..."));
+
+                // Source: ARK > ShooterGame > Content > Localization > Game > en
+                string enFolderPath = Path.Combine(arkPath, "ShooterGame", "Content", "Localization", "Game", "en");
+
+                // Files to copy
+                string archiveFile = Path.Combine(enFolderPath, "ShooterGame.archive");
+                string locresFile = Path.Combine(enFolderPath, "ShooterGame.locres");
+
+                // Validate source files exist
+                if (!File.Exists(archiveFile) || !File.Exists(locresFile))
+                {
+                    InvokeAsync(() => NotificationService.ShowError("English localization files not found in ARK installation!"));
+                    Logger.LogError("Source files not found: {Archive} or {Locres}", archiveFile, locresFile);
+                    return;
+                }
+
+                // Destination: ARK > ShooterGame > Content > Localization > Game > zh-Hans-CN
+                string zhFolderPath = Path.Combine(arkPath, "ShooterGame", "Content", "Localization", "Game", "zh-Hans-CN");
+
+                // Create destination folder if it doesn't exist
+                if (!Directory.Exists(zhFolderPath))
+                {
+                    Directory.CreateDirectory(zhFolderPath);
+                    Logger.LogInformation("Created zh-Hans-CN folder: {Path}", zhFolderPath);
+                }
+
+                // Copy files
+                string destArchive = Path.Combine(zhFolderPath, "ShooterGame.archive");
+                string destLocres = Path.Combine(zhFolderPath, "ShooterGame.locres");
+
+                File.Copy(archiveFile, destArchive, true);
+                File.Copy(locresFile, destLocres, true);
+
+                InvokeAsync(() =>
+                {
+                    NotificationService.ShowSuccess("✅ Font files installed!\n\nNow set Steam launch option to: -culture=zh-Hans-CN");
+                    ActivityService.AddActivity("Asian font installed", "success");
+                    StateHasChanged();
+                });
+
+                Logger.LogInformation("Asian font files copied to: {Path}", zhFolderPath);
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error installing Asian font");
+            NotificationService.ShowError($"Installation failed: {ex.Message}");
+        }
+        finally
+        {
+            isInstalling = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OpenFontFolderInExplorer()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(arkPath))
+            {
+                NotificationService.ShowError("ARK installation not found!");
+                return;
+            }
+
+            string fontFolderPath = Path.Combine(arkPath, "ShooterGame", "Content", "Localization", "Game");
+
+            if (!Directory.Exists(fontFolderPath))
+            {
+                NotificationService.ShowError($"Font folder not found: {fontFolderPath}");
+                return;
+            }
+
+            // Open folder in Windows Explorer
+            System.Diagnostics.Process.Start("explorer.exe", fontFolderPath);
+
+            NotificationService.ShowSuccess("Opened font folder in Explorer!");
+            ActivityService.AddActivity("Opened font folder", "info");
+            Logger.LogInformation("Opened font folder: {Path}", fontFolderPath);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error opening font folder");
+            NotificationService.ShowError($"Failed to open folder: {ex.Message}");
+        }
+    }
+
+    private async Task CopyLaunchOptionToClipboard()
+    {
+        try
+        {
+            await Clipboard.Default.SetTextAsync("culture=Global");
+
+            NotificationService.ShowSuccess("Copied to clipboard!");
+            ActivityService.AddActivity("Launch option copied", "success");
+            Logger.LogInformation("Launch option copied to clipboard");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error copying to clipboard");
+            NotificationService.ShowError("Failed to copy.");
+        }
+    }
+
+    private async Task CopyChineseLaunchOptionToClipboard()
+    {
+        try
+        {
+            await Clipboard.Default.SetTextAsync("-culture=zh-Hans-CN");
+
+            NotificationService.ShowSuccess("Copied to clipboard!");
+            ActivityService.AddActivity("Asian font launch option copied", "success");
+            Logger.LogInformation("Asian font launch option copied to clipboard");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error copying to clipboard");
+            NotificationService.ShowError("Failed to copy.");
+        }
+    }
+
+    private async Task CopyPathToClipboard()
+    {
+        try
+        {
+            string pathToCopy = !string.IsNullOrEmpty(arkPath)
+                ? Path.Combine(arkPath, "ShooterGame", "Content", "Localization", "Game")
+                : @"ARK\ShooterGame\Content\Localization\Game";
+
+            await Clipboard.Default.SetTextAsync(pathToCopy);
+
+            NotificationService.ShowSuccess("Path copied to clipboard!");
+            ActivityService.AddActivity("Font path copied", "success");
+            Logger.LogInformation("Font path copied to clipboard: {Path}", pathToCopy);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error copying path to clipboard");
+            NotificationService.ShowError("Failed to copy path.");
+        }
+    }
+
+    private void CopyDirectory(string sourceDir, string targetDir)
+    {
+        Directory.CreateDirectory(targetDir);
+
+        foreach (string file in Directory.GetFiles(sourceDir))
+        {
+            string fileName = Path.GetFileName(file);
+            string destFile = Path.Combine(targetDir, fileName);
+            File.Copy(file, destFile, true);
+        }
+
+        foreach (string directory in Directory.GetDirectories(sourceDir))
+        {
+            string dirName = Path.GetFileName(directory);
+            string destDir = Path.Combine(targetDir, dirName);
+            CopyDirectory(directory, destDir);
+        }
+    }
+}
