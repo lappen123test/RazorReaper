@@ -303,12 +303,12 @@
             {
                 if (string.IsNullOrEmpty(arkPath))
                 {
-                    InvokeAsync(() => NotificationService.ShowError("ARK installation not found!"));
+                    await InvokeAsync(() => NotificationService.ShowError("ARK installation not found!"));
                     return;
                 }
 
                 // Extract the bundled Global font
-                InvokeAsync(() => NotificationService.ShowInfo("Extracting Global font..."));
+                await InvokeAsync(() => NotificationService.ShowInfo("Extracting Global font..."));
 
                 string tempPath = Path.Combine(Path.GetTempPath(), "GlobalFont_" + Guid.NewGuid().ToString("N"));
                 if (Directory.Exists(tempPath))
@@ -324,7 +324,7 @@
 
                     if (!File.Exists(zipPath))
                     {
-                        InvokeAsync(() => NotificationService.ShowError("Global font package not found in app resources. Please ensure Global.zip exists in wwwroot/assets/fonts/"));
+                        await InvokeAsync(() => NotificationService.ShowError("Global font package not found in app resources. Please ensure Global.zip exists in wwwroot/assets/fonts/"));
                         Logger.LogError("Global.zip not found at: {Path}", zipPath);
                         return;
                     }
@@ -345,12 +345,12 @@
                         }
                         else
                         {
-                            InvokeAsync(() => NotificationService.ShowError("Invalid Global font package structure."));
+                            await InvokeAsync(() => NotificationService.ShowError("Invalid Global font package structure."));
                             return;
                         }
                     }
 
-                    InvokeAsync(() => NotificationService.ShowInfo("Installing font files..."));
+                    await InvokeAsync(() => NotificationService.ShowInfo("Installing font files..."));
 
                     // Copy to ARK directory
                     string targetPath = Path.Combine(arkPath, "ShooterGame", "Content", "Localization", "Game", "Global");
@@ -363,7 +363,7 @@
                     CopyDirectory(globalFolderPath, targetPath);
 
                     // Show simple success notification
-                    InvokeAsync(() =>
+                    await InvokeAsync(() =>
                     {
                         NotificationService.ShowSuccess("✅ Font files installed!\n\nNow set Steam launch option (see instructions).");
                         ActivityService.AddActivity("Global font installed", "success");
@@ -462,11 +462,11 @@
             {
                 if (string.IsNullOrEmpty(arkPath))
                 {
-                    InvokeAsync(() => NotificationService.ShowError("ARK installation not found!"));
+                    await InvokeAsync(() => NotificationService.ShowError("ARK installation not found!"));
                     return;
                 }
 
-                InvokeAsync(() => NotificationService.ShowInfo("Copying localization files..."));
+                await InvokeAsync(() => NotificationService.ShowInfo("Copying localization files..."));
 
                 // Source: ARK > ShooterGame > Content > Localization > Game > en
                 string enFolderPath = Path.Combine(arkPath, "ShooterGame", "Content", "Localization", "Game", "en");
@@ -478,7 +478,7 @@
                 // Validate source files exist
                 if (!File.Exists(archiveFile) || !File.Exists(locresFile))
                 {
-                    InvokeAsync(() => NotificationService.ShowError("English localization files not found in ARK installation!"));
+                    await InvokeAsync(() => NotificationService.ShowError("English localization files not found in ARK installation!"));
                     Logger.LogError("Source files not found: {Archive} or {Locres}", archiveFile, locresFile);
                     return;
                 }
@@ -500,7 +500,7 @@
                 File.Copy(archiveFile, destArchive, true);
                 File.Copy(locresFile, destLocres, true);
 
-                InvokeAsync(() =>
+                await InvokeAsync(() =>
                 {
                     NotificationService.ShowSuccess("✅ Font files installed!\n\nNow set Steam launch option to: -culture=zh-Hans-CN");
                     ActivityService.AddActivity("Asian font installed", "success");

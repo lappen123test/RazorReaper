@@ -1,4 +1,4 @@
-﻿@page "/pixel"
+@page "/pixel"
 @using System.Diagnostics
 @using System.IO
 @using RazorReaper.Components.Shared
@@ -9,65 +9,72 @@
     <main class="main-content">
         <header class="page-header">
             <h1 class="page-title">Pixel Textures</h1>
-            <p class="page-subtitle">Manage ARK texture files and pixel modifications</p>
+            <p class="page-subtitle">Manage ARK texture files for visual modifications</p>
         </header>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; height: calc(100vh - 200px);">
-
-            <div class="content-card" style="height: fit-content; overflow: visible;">
-                <h3 class="mb-3">Delete Texture Files</h3>
-
-                <div style="margin-bottom: 2rem;">
-                    <p style="color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.6;">
-                        Remove Ark's default texture files to achieve a visually bugged black appearance for Tools, Armor, and Weapons. (Some Saddles as well.)
-                    </p>
-
-                    <div class="warning-box">
-                        <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-                            <svg style="width: 20px; height: 20px; color: var(--accent-purple); margin-right: 0.5rem;" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                            </svg>
-                            <strong style="color: var(--accent-purple);">Warning</strong>
-                        </div>
-                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">
-                            This action will permanently delete texture files from your ARK installation.
-                        </p>
+        <div class="pixel-grid">
+            <!-- Delete Textures Section -->
+            <div class="pixel-card">
+                <div class="card-header">
+                    <div class="icon-badge">
+                        <svg fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>Delete Textures</h3>
+                        <p>Remove default texture files</p>
                     </div>
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 1rem;">
-                    <div class="dropdown-container">
-                        <label style="display: block; color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 600;">
-                            Select Texture Categories:
-                        </label>
-                        <button class="dropdown-toggle" @onclick="ToggleDropdown" type="button">
-                            <span>@GetSelectedCategoriesText()</span>
-                            <svg style="width: 16px; height: 16px; margin-left: auto; transition: transform 0.3s; transform: rotate(@(isDropdownOpen ? "180deg" : "0deg"));" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
+                <div class="card-content">
+                    <p class="description">
+                        Deleting texture files creates a black/glitched appearance for weapons, tools, and armor in-game.
+                    </p>
 
-                        @if (isDropdownOpen)
+                    <div class="category-selector">
+                        <div class="selector-header">
+                            <label class="selector-label">
+                                <span>Select Categories</span>
+                                <span class="selector-count">@selectedCategories.Count / @textureCategories.Count</span>
+                            </label>
+                            <button class="collapse-toggle" @onclick="ToggleCategoryList">
+                                <svg fill="currentColor" viewBox="0 0 20 20" class="@(isCategoryListExpanded ? "rotate-180" : "")">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        @if (isCategoryListExpanded)
                         {
-                            <div class="dropdown-menu">
-                                <div class="dropdown-header">
-                                    <button class="dropdown-control-btn" @onclick="SelectAllCategories">Select All</button>
-                                    <button class="dropdown-control-btn" @onclick="DeselectAllCategories">Deselect All</button>
-                                </div>
+                            <div class="selector-actions">
+                                <button class="action-btn" @onclick="SelectAllCategories">
+                                    <svg fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                    All
+                                </button>
+                                <button class="action-btn" @onclick="DeselectAllCategories">
+                                    <svg fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                    None
+                                </button>
+                            </div>
+
+                            <div class="category-list">
                                 @foreach (var category in textureCategories.Keys)
                                 {
-                                    <label class="dropdown-item">
+                                    <label class="category-item">
                                         <input type="checkbox"
                                                checked="@selectedCategories.Contains(category)"
                                                @onchange="@(e => ToggleCategory(category, e))" />
-                                        <span>@category</span>
-                                        <div class="info-icon-container">
+                                        <span class="category-name">@category</span>
+                                        <div class="category-info">
                                             <svg class="info-icon" viewBox="0 0 20 20" fill="currentColor">
                                                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
                                             </svg>
-                                            <div class="info-tooltip">
-                                                @GetCategoryInfo(category)
-                                            </div>
+                                            <div class="info-popup">@GetCategoryInfo(category)</div>
                                         </div>
                                     </label>
                                 }
@@ -75,84 +82,69 @@
                         }
                     </div>
 
-                    <button class="btn btn-danger" @onclick="DeleteTextureFiles" disabled="@(!selectedCategories.Any())">
-                        <svg style="width: 16px; height: 16px; margin-right: 0.75rem;" fill="currentColor" viewBox="0 0 20 20">
+                    <button class="primary-btn danger" @onclick="DeleteTextureFiles" disabled="@(!selectedCategories.Any())">
+                        <svg fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                         </svg>
-                        Delete Selected Textures (@selectedCategories.Count)
+                        Delete @selectedCategories.Count @(selectedCategories.Count == 1 ? "Category" : "Categories")
                     </button>
+
+                    @if (!string.IsNullOrEmpty(statusMessage))
+                    {
+                        <div class="status-alert">@statusMessage</div>
+                    }
                 </div>
-
-                @if (!string.IsNullOrEmpty(statusMessage))
-                {
-                    <div class="mt-3" style="padding: 1rem; background: @GetStatusBackgroundColor(); border-radius: 8px; border-left: 3px solid @GetStatusBorderColor();">
-                        <div style="color: @GetStatusTextColor(); font-weight: 600;">@statusMessage</div>
-                    </div>
-                }
-
-                @if (!string.IsNullOrEmpty(arkPath))
-                {
-                    <div class="pixel-path-card">
-                        <div class="path-icon-small">
-                            <svg fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <div style="color: var(--accent-purple); font-weight: 600; font-size: 0.85rem; margin-bottom: 0.25rem;">ARK Installation</div>
-                            <div style="color: var(--text-secondary); font-size: 0.8rem; word-break: break-all; font-family: 'Courier New', monospace;">@arkPath</div>
-                        </div>
-                    </div>
-                }
             </div>
 
-            <div class="content-card" style="height: fit-content;">
-                <h3 class="mb-3">Repair Game Files</h3>
-
-                <div style="margin-bottom: 2rem;">
-                    <p style="color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.6;">
-                        After deleting texture files, you can restore them by verifying the integrity of your ARK game files through Steam.
-                    </p>
-
-                    <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-                        <div class="feature-tag">🔧 Steam Integration</div>
-                        <div class="feature-tag">📁 File Verification</div>
-                        <div class="feature-tag">🔄 Auto Repair</div>
-                    </div>
-                </div>
-
-                <div class="repair-process-box">
-                    <h4 style="color: var(--accent-purple); margin-bottom: 1rem; font-weight: 600;">Repair Process</h4>
-                    <div style="display: grid; gap: 1rem;">
-                        <div style="display: flex; align-items: center;">
-                            <div class="step-number">1</div>
-                            <span style="color: var(--text-secondary); font-size: 0.9rem;">Click "Start Verify Integrity" button</span>
-                        </div>
-                        <div style="display: flex; align-items: center;">
-                            <div class="step-number">2</div>
-                            <span style="color: var(--text-secondary); font-size: 0.9rem;">Steam will automatically verify ARK files</span>
-                        </div>
-                        <div style="display: flex; align-items: center;">
-                            <div class="step-number">3</div>
-                            <span style="color: var(--text-secondary); font-size: 0.9rem;">Deleted files will be redownloaded</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="display: flex; flex-direction: column; gap: 1rem;">
-                    <button class="btn btn-primary" @onclick="StartSteamVerifyIntegrity">
-                        <svg style="width: 16px; height: 16px; margin-right: 0.75rem;" fill="currentColor" viewBox="0 0 20 20">
+            <!-- Restore Section -->
+            <div class="pixel-card">
+                <div class="card-header">
+                    <div class="icon-badge">
+                        <svg fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
                         </svg>
-                        Start Verify Integrity
-                    </button>
+                    </div>
+                    <div>
+                        <h3>Restore Files</h3>
+                        <p>Verify game integrity via Steam</p>
+                    </div>
+                </div>
 
-                    <button class="btn btn-secondary" @onclick="OpenSteamLibrary">
-                        <svg style="width: 16px; height: 16px; margin-right: 0.75rem;" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
-                        </svg>
-                        Open Steam Library
-                    </button>
+                <div class="card-content">
+                    <p class="description">
+                        Use Steam's file verification to automatically restore deleted texture files.
+                    </p>
+
+                    <div class="process-steps">
+                        <div class="process-step">
+                            <div class="step-badge">1</div>
+                            <span>Click verify integrity button</span>
+                        </div>
+                        <div class="process-step">
+                            <div class="step-badge">2</div>
+                            <span>Steam scans ARK files</span>
+                        </div>
+                        <div class="process-step">
+                            <div class="step-badge">3</div>
+                            <span>Missing files redownload</span>
+                        </div>
+                    </div>
+
+                    <div class="button-stack">
+                        <button class="primary-btn" @onclick="StartSteamVerifyIntegrity">
+                            <svg fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                            </svg>
+                            Start Verify Integrity
+                        </button>
+
+                        <button class="secondary-btn" @onclick="OpenSteamLibrary">
+                            <svg fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                            </svg>
+                            Open Steam Library
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -160,310 +152,423 @@
 </div>
 
 <style>
-    .feature-tag {
-        background: rgba(255, 255, 255, 0.1);
-        color: var(--text-primary);
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        border: 1px solid var(--border-color);
+    .pixel-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
     }
 
-    .warning-box {
-        background: rgba(139, 92, 246, 0.1);
-        border: 1px solid rgba(139, 92, 246, 0.3);
-        border-radius: 8px;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .pixel-path-card {
-        margin-top: 1.5rem;
-        padding: 1rem;
-        background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05));
-        border: 1px solid rgba(139, 92, 246, 0.2);
-        border-radius: 8px;
+    /* Card Styles */
+    .pixel-card {
+        background: rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
         display: flex;
-        align-items: center;
-        gap: 0.75rem;
+        flex-direction: column;
+        overflow: hidden;
         transition: all 0.3s ease;
     }
 
-    .pixel-path-card:hover {
-        background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.08));
-        border-color: var(--accent-purple);
+    .pixel-card:hover {
+        border-color: rgba(255, 255, 255, 0.12);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     }
 
-    .path-icon-small {
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .icon-badge {
+        width: 40px;
+        height: 40px;
+        background: rgba(139, 92, 246, 0.1);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .icon-badge svg {
+        width: 20px;
+        height: 20px;
+        color: rgba(139, 92, 246, 0.8);
+    }
+
+    .card-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .card-header p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .card-content {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        flex: 1;
+    }
+
+    .description {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+
+    /* Category Selector */
+    .category-selector {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .selector-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .selector-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        font-weight: 600;
+        flex: 1;
+    }
+
+    .collapse-toggle {
         width: 32px;
         height: 32px;
-        border-radius: 8px;
-        background: rgba(139, 92, 246, 0.2);
         display: flex;
         align-items: center;
         justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .path-icon-small svg {
-        width: 16px;
-        height: 16px;
-        color: var(--accent-purple);
-    }
-
-    .repair-process-box {
-        background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.08));
-        border: 1px solid rgba(139, 92, 246, 0.3);
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .step-number {
-        width: 24px;
-        height: 24px;
-        background: var(--accent-purple);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 0.75rem;
-        font-size: 0.8rem;
-        font-weight: bold;
-        color: white;
-        flex-shrink: 0;
-    }
-
-    .dropdown-container {
-        position: relative;
-        width: 100%;
-    }
-
-    .dropdown-toggle {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        padding: 0.75rem 1rem;
-        background: rgba(0, 0, 0, 0.4);
-        border: 1px solid #2a2a2a;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 8px;
-        color: var(--text-primary);
+        color: var(--text-secondary);
         cursor: pointer;
-        transition: all 0.3s ease;
-        font-size: 0.9rem;
-    }
-
-    .dropdown-toggle:hover {
-        background: rgba(0, 0, 0, 0.6);
-        border-color: rgba(139, 92, 246, 0.3);
-    }
-
-    .dropdown-menu {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        margin-top: 0.5rem;
-        background: rgba(10, 10, 10, 0.98);
-        border: 1px solid #2a2a2a;
-        border-radius: 8px;
-        max-height: 500px;
-        overflow-y: auto;
-        overflow-x: hidden;
-        z-index: 10000;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-        animation: dropdown-slide 0.2s ease;
-    }
-
-    /* Custom scrollbar styling */
-    .dropdown-menu::-webkit-scrollbar {
-        width: 10px;
-    }
-
-    .dropdown-menu::-webkit-scrollbar-track {
-        background: rgba(0, 0, 0, 0.5);
-        border-radius: 0 8px 8px 0;
-    }
-
-    .dropdown-menu::-webkit-scrollbar-thumb {
-        background: var(--accent-purple);
-        border-radius: 5px;
-        transition: background 0.3s ease;
-    }
-
-    .dropdown-menu::-webkit-scrollbar-thumb:hover {
-        background: var(--accent-purple-light);
-    }
-
-    .dropdown-menu::-webkit-scrollbar-thumb:active {
-        background: var(--accent-purple-dark);
-    }
-
-    /* Firefox scrollbar */
-    .dropdown-menu {
-        scrollbar-width: thin;
-        scrollbar-color: var(--accent-purple) rgba(0, 0, 0, 0.5);
-    }
-
-    @@keyframes dropdown-slide {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .dropdown-header {
-        display: flex;
-        gap: 0.5rem;
-        padding: 0.75rem;
-        border-bottom: 1px solid #2a2a2a;
-        background: rgba(0, 0, 0, 0.3);
-    }
-
-    .dropdown-control-btn {
-        flex: 1;
-        padding: 0.5rem;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid #3a3a3a;
-        border-radius: 6px;
-        color: #cccccc;
-        cursor: pointer;
-        font-size: 0.85rem;
-        font-weight: 600;
         transition: all 0.2s ease;
     }
 
-    .dropdown-control-btn:hover {
-        background: rgba(139, 92, 246, 0.1);
-        border-color: var(--accent-purple);
-        color: var(--accent-purple);
+    .collapse-toggle:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(139, 92, 246, 0.3);
+        color: rgba(139, 92, 246, 0.9);
     }
 
-    .dropdown-item {
-        display: flex;
-        align-items: center;
-        padding: 0.75rem 1rem;
-        cursor: pointer;
-        transition: background 0.2s ease;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-    }
-
-    .dropdown-item:hover {
-        background: rgba(255, 255, 255, 0.08);
-    }
-
-    .dropdown-item:last-child {
-        border-bottom: none;
-    }
-
-    .dropdown-item input[type="checkbox"] {
+    .collapse-toggle svg {
         width: 18px;
         height: 18px;
-        margin-right: 0.75rem;
-        cursor: pointer;
-        accent-color: var(--accent-purple);
+        transition: transform 0.3s ease;
     }
 
-    .dropdown-item span {
-        color: var(--text-primary);
-        font-size: 0.9rem;
+    .collapse-toggle svg.rotate-180 {
+        transform: rotate(180deg);
+    }
+
+    .selector-count {
+        background: rgba(139, 92, 246, 0.15);
+        color: rgba(139, 92, 246, 0.9);
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+    }
+
+    .selector-actions {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .action-btn {
         flex: 1;
-    }
-
-    .info-icon-container {
-        position: relative;
         display: flex;
         align-items: center;
-        margin-left: auto;
-        padding-left: 0.5rem;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.6rem;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .action-btn svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .action-btn:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.15);
+        color: var(--text-primary);
+    }
+
+    .category-list {
+        max-height: 320px;
+        overflow-y: auto;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 0.5rem;
+    }
+
+    .category-list::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .category-list::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .category-list::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+    }
+
+    .category-list::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .category-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: background 0.2s ease;
+        position: relative;
+    }
+
+    .category-item:hover {
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .category-item input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        margin-right: 0.75rem;
+        cursor: pointer;
+        accent-color: rgba(139, 92, 246, 0.8);
+    }
+
+    .category-name {
+        flex: 1;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+    }
+
+    .category-info {
+        position: relative;
+        margin-left: 0.5rem;
     }
 
     .info-icon {
-        width: 18px;
-        height: 18px;
-        color: rgba(139, 92, 246, 0.6);
+        width: 16px;
+        height: 16px;
+        color: rgba(255, 255, 255, 0.3);
         cursor: help;
         transition: color 0.2s ease;
     }
 
     .info-icon:hover {
-        color: var(--accent-purple);
+        color: rgba(139, 92, 246, 0.8);
     }
 
-    .info-tooltip {
+    .info-popup {
         position: absolute;
-        right: 100%;
+        right: calc(100% + 0.75rem);
         top: 50%;
         transform: translateY(-50%);
-        margin-right: 0.5rem;
         padding: 0.75rem 1rem;
-        background: rgba(0, 0, 0, 0.95);
-        border: 1px solid #3a3a3a;
+        background: rgba(10, 10, 10, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 8px;
-        color: #cccccc;
+        color: var(--text-secondary);
         font-size: 0.75rem;
-        line-height: 1.6;
-        white-space: normal;
-        width: 300px;
-        max-height: 400px;
+        line-height: 1.5;
+        width: 280px;
+        max-height: 200px;
         overflow-y: auto;
-        z-index: 20000;
-        pointer-events: auto;
+        z-index: 1000;
         opacity: 0;
         visibility: hidden;
         transition: opacity 0.2s ease, visibility 0.2s ease;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        pointer-events: none;
     }
 
-    .info-tooltip::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    .info-tooltip::-webkit-scrollbar-track {
-        background: rgba(0, 0, 0, 0.3);
-        border-radius: 0 8px 8px 0;
-    }
-
-    .info-tooltip::-webkit-scrollbar-thumb {
-        background: var(--accent-purple);
-        border-radius: 3px;
-    }
-
-    .info-tooltip::-webkit-scrollbar-thumb:hover {
-        background: var(--accent-purple-light);
-    }
-
-    .info-icon-container:hover .info-tooltip,
-    .info-tooltip:hover {
+    .category-info:hover .info-popup {
         opacity: 1;
         visibility: visible;
     }
 
-    .btn:disabled {
-        opacity: 0.5;
+    /* Process Steps */
+    .process-steps {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 1rem;
+    }
+
+    .process-step {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .step-badge {
+        width: 24px;
+        height: 24px;
+        background: rgba(139, 92, 246, 0.15);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: rgba(139, 92, 246, 0.9);
+        flex-shrink: 0;
+    }
+
+    .process-step span {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    /* Buttons */
+    .button-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: auto;
+    }
+
+    .primary-btn,
+    .secondary-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        padding: 0.9rem 1.2rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .primary-btn svg,
+    .secondary-btn svg {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
+    .primary-btn {
+        background: rgba(139, 92, 246, 0.15);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        color: rgba(139, 92, 246, 1);
+    }
+
+    .primary-btn:hover:not(:disabled) {
+        background: rgba(139, 92, 246, 0.25);
+        border-color: rgba(139, 92, 246, 0.5);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(139, 92, 246, 0.2);
+    }
+
+    .primary-btn.danger {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+    }
+
+    .primary-btn.danger:hover:not(:disabled) {
+        background: rgba(239, 68, 68, 0.15);
+        border-color: rgba(239, 68, 68, 0.5);
+        box-shadow: 0 8px 20px rgba(239, 68, 68, 0.2);
+    }
+
+    .primary-btn:disabled {
+        opacity: 0.4;
         cursor: not-allowed;
+        transform: none !important;
+    }
+
+    .secondary-btn {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--text-primary);
+    }
+
+    .secondary-btn:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.15);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Status Alert */
+    .status-alert {
+        padding: 1rem;
+        background: rgba(139, 92, 246, 0.1);
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        border-radius: 8px;
+        color: rgba(139, 92, 246, 0.9);
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    /* Responsive */
+    @@media (max-width: 1024px) {
+        .pixel-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
 @code {
     private string statusMessage = "";
     private string arkPath = "";
-    private bool isDropdownOpen = false;
     private HashSet<string> selectedCategories = new HashSet<string>();
     private Dictionary<string, Dictionary<string, string[]>> textureCategories = new Dictionary<string, Dictionary<string, string[]>>();
+    private bool isCategoryListExpanded = true;
 
     protected override Task OnInitializedAsync()
     {
         CheckArkInstallation();
         InitializeTextureCategories();
-        // Select all categories by default
         selectedCategories = new HashSet<string>(textureCategories.Keys);
         return Task.CompletedTask;
+    }
+
+    private void ToggleCategoryList()
+    {
+        isCategoryListExpanded = !isCategoryListExpanded;
     }
 
     private void CheckArkInstallation()
@@ -475,39 +580,22 @@
             {
                 arkPath = foundPath;
             }
-            else
-            {
-                arkPath = "";
-            }
         }
-        catch (Exception)
-        {
-            arkPath = "";
-        }
+        catch { }
     }
 
     private void InitializeTextureCategories()
     {
-        string shooterGamePath = "{SHOOTERGAME}";  // Placeholder, will be replaced in DeleteTextureFiles
-        textureCategories = PixelTextureCategories.GetCategories(shooterGamePath);
-    }
-
-    private void ToggleDropdown()
-    {
-        isDropdownOpen = !isDropdownOpen;
+        textureCategories = PixelTextureCategories.GetCategories("{SHOOTERGAME}");
     }
 
     private void ToggleCategory(string category, ChangeEventArgs e)
     {
         bool isChecked = (bool)(e.Value ?? false);
         if (isChecked)
-        {
             selectedCategories.Add(category);
-        }
         else
-        {
             selectedCategories.Remove(category);
-        }
     }
 
     private void SelectAllCategories()
@@ -520,48 +608,28 @@
         selectedCategories.Clear();
     }
 
-    private string GetSelectedCategoriesText()
-    {
-        if (!selectedCategories.Any())
-            return "No categories selected - Select to enable deletion";
-        if (selectedCategories.Count == textureCategories.Count)
-            return $"All categories selected ({textureCategories.Count} categories)";
-        return $"{selectedCategories.Count} of {textureCategories.Count} categories selected";
-    }
-
     private MarkupString GetCategoryInfo(string category)
     {
         if (!textureCategories.ContainsKey(category))
-            return new MarkupString("No information available");
+            return new MarkupString("No info available");
 
-        var categoryFiles = textureCategories[category];
         var fileList = new List<string>();
-
-        foreach (var folder in categoryFiles)
+        foreach (var folder in textureCategories[category])
         {
             foreach (var fileName in folder.Value)
             {
                 if (!string.IsNullOrEmpty(fileName))
                 {
-                    // Remove file extension and clean up the name
-                    string cleanName = fileName.Replace(".uasset", "")
-                                               .Replace("_", " ")
-                                               .Replace("T ", "Texture ")
-                                               .Replace("M ", "Material ")
-                                               .Replace("SM ", "Static Mesh ");
-                    fileList.Add(cleanName);
+                    string clean = fileName.Replace(".uasset", "").Replace("_", " ");
+                    fileList.Add(clean);
                 }
             }
         }
 
         if (!fileList.Any())
-            return new MarkupString("No files in this category");
+            return new MarkupString("No files");
 
-        string info = "<div style='max-height: 380px;'>";
-        info += string.Join("<br/>• ", fileList.Select(f => $"• {f}"));
-        info += "</div>";
-
-        return new MarkupString(info);
+        return new MarkupString(string.Join("<br/>• ", fileList.Select(f => $"• {f}")));
     }
 
     private void DeleteTextureFiles()
@@ -570,45 +638,35 @@
         {
             if (!selectedCategories.Any())
             {
-                statusMessage = "Please select at least one category to delete!";
+                statusMessage = "⚠️ Select at least one category";
                 StateHasChanged();
                 return;
             }
 
             string? arkBasePath = ArkUtilities.FindArkPath();
-
             if (string.IsNullOrEmpty(arkBasePath) || !Directory.Exists(arkBasePath))
             {
-                statusMessage = "ARK installation not found!";
+                statusMessage = "❌ ARK installation not found";
                 StateHasChanged();
                 return;
             }
 
             string shooterGamePath = Path.Combine(arkBasePath, "ShooterGame", "Content", "PrimalEarth");
             int deletedCount = 0;
-
-            // Get all categories with the actual path
             var allCategories = PixelTextureCategories.GetCategories(shooterGamePath);
 
-            // Only process selected categories
-            foreach (var selectedCategory in selectedCategories)
+            foreach (var category in selectedCategories)
             {
-                if (!allCategories.ContainsKey(selectedCategory))
-                    continue;
+                if (!allCategories.ContainsKey(category)) continue;
 
-                var categoryFiles = allCategories[selectedCategory];
-                foreach (var folder in categoryFiles)
+                foreach (var folder in allCategories[category])
                 {
-                    string folderPath = folder.Key;
-                    if (!Directory.Exists(folderPath))
-                        continue;
+                    if (!Directory.Exists(folder.Key)) continue;
 
                     foreach (string fileName in folder.Value)
                     {
-                        if (string.IsNullOrEmpty(fileName))
-                            continue;
-
-                        string filePath = Path.Combine(folderPath, fileName);
+                        if (string.IsNullOrEmpty(fileName)) continue;
+                        string filePath = Path.Combine(folder.Key, fileName);
                         if (File.Exists(filePath))
                         {
                             File.Delete(filePath);
@@ -618,13 +676,12 @@
                 }
             }
 
-            isDropdownOpen = false;  // Close dropdown after deletion
-            statusMessage = $"✅ Successfully deleted {deletedCount} texture files from {selectedCategories.Count} categories";
+            statusMessage = $"✅ Deleted {deletedCount} files from {selectedCategories.Count} categories";
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            statusMessage = $"❌ Error deleting texture files: {ex.Message}";
+            statusMessage = $"❌ Error: {ex.Message}";
             StateHasChanged();
         }
     }
@@ -633,19 +690,17 @@
     {
         try
         {
-            string steamVerifyUrl = "steam://validate/346110";
             Process.Start(new ProcessStartInfo
             {
-                FileName = steamVerifyUrl,
+                FileName = "steam://validate/346110",
                 UseShellExecute = true
             });
-
-            statusMessage = "🔄 Starting Steam file verification for ARK: Survival Evolved...";
+            statusMessage = "🔄 Starting Steam verification...";
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            statusMessage = $"❌ Error starting verification: {ex.Message}";
+            statusMessage = $"❌ Error: {ex.Message}";
             StateHasChanged();
         }
     }
@@ -654,35 +709,18 @@
     {
         try
         {
-            string steamLibraryUrl = "steam://nav/games/details/346110";
             Process.Start(new ProcessStartInfo
             {
-                FileName = steamLibraryUrl,
+                FileName = "steam://nav/games/details/346110",
                 UseShellExecute = true
             });
-
-            statusMessage = "📚 Opening ARK in Steam Library - right-click for properties menu";
+            statusMessage = "📚 Opening ARK in Steam";
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            statusMessage = $"❌ Error opening Steam library: {ex.Message}";
+            statusMessage = $"❌ Error: {ex.Message}";
             StateHasChanged();
         }
-    }
-
-    private string GetStatusBackgroundColor()
-    {
-        return "rgba(139, 92, 246, 0.1)";
-    }
-
-    private string GetStatusBorderColor()
-    {
-        return "var(--accent-purple)";
-    }
-
-    private string GetStatusTextColor()
-    {
-        return "var(--accent-purple)";
     }
 }
