@@ -23,7 +23,7 @@
 
     <main class="main-content">
         <header class="page-header">
-            <h1 class="page-title">RazorReaper Dashboard</h1>
+            <h1 class="page-title">Welcome, @userName</h1>
             <p class="page-subtitle">ARK: Survival Evolved Configuration & Server Management Tool</p>
         </header>
 
@@ -431,6 +431,7 @@
 @code {
     private SystemStatus systemStatus = new SystemStatus { IsHealthy = true };
     private DateTime currentTime = DateTime.Now;
+    private string userName = "";
     private System.Timers.Timer? updateTimer; // Consolidated timer for clock and session
     private string timeZoneInfo = "";
     private string utcOffset = "";
@@ -481,6 +482,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // Get Windows account username
+        userName = Environment.UserName;
+
         // Initialize timezone information
         var localTimeZone = TimeZoneInfo.Local;
         timeZoneInfo = localTimeZone.DisplayName;
