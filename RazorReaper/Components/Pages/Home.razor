@@ -540,15 +540,85 @@
     [return: MarshalAs(UnmanagedType.Bool)]
     static extern bool GetPhysicallyInstalledSystemMemory(out long TotalMemoryInKilobytes);
 
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    private class MEMORYSTATUSEX
+    {
+        public uint dwLength;
+        public uint dwMemoryLoad;
+        public ulong ullTotalPhys;
+        public ulong ullAvailPhys;
+        public ulong ullTotalPageFile;
+        public ulong ullAvailPageFile;
+        public ulong ullTotalVirtual;
+        public ulong ullAvailVirtual;
+        public ulong ullAvailExtendedVirtual;
+        public MEMORYSTATUSEX()
+        {
+            dwLength = (uint)Marshal.SizeOf(typeof(MEMORYSTATUSEX));
+        }
+    }
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool GlobalMemoryStatusEx([In, Out] MEMORYSTATUSEX lpBuffer);
+
+    // GPU adapter tracking
+    private class GpuAdapter
+    {
+        public string Luid { get; set; } = "";
+        public float TotalUtilization { get; set; }
+        public float Utilization3D { get; set; }
+        public float UtilizationCompute { get; set; }
+        public float UtilizationCopy { get; set; }
+        public float UtilizationVideo { get; set; }
+        public float DedicatedMemoryUsedMB { get; set; }
+        public float DedicatedMemoryTotalMB { get; set; }
+    }
+
     private void StartResourceMonitoring()
     {
         try
         {
-            // Initialize performance counters
-            cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+            // Initialize CPU counter - using "Processor Information" for better accuracy on modern systems
+            try
+            {
+                if (PerformanceCounterCategory.Exists("Processor Information"))
+                {
+                    cpuCounter = new PerformanceCounter("Processor Information", "% Processor Time", "_Total");
+                    Logger.LogDebug("Using 'Processor Information' category for CPU monitoring");
+                }
+                else
+                {
+                    cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+                    Logger.LogDebug("Using 'Processor' category for CPU monitoring (fallback)");
+                }
+            }
+            catch
+            {
+                // Fallback to older counter if Processor Information doesn't exist
+                cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+                Logger.LogDebug("Using 'Processor' category for CPU monitoring (fallback)");
+            }
+
+            // Initialize RAM counter
             ramCounter = new PerformanceCounter("Memory", "% Committed Bytes In Use");
 
-            // Try to initialize GPU counters - works for NVIDIA, AMD, Intel, and other GPUs on Windows 10+
+            // Get physical RAM using GlobalMemoryStatusEx for accurate totals
+            var memStatus = new MEMORYSTATUSEX();
+            if (GlobalMemoryStatusEx(memStatus))
+            {
+                ramTotalGB = Math.Round(memStatus.ullTotalPhys / 1024.0 / 1024.0 / 1024.0, 2);
+                Logger.LogDebug("Physical RAM detected: {TotalGB} GB", ramTotalGB);
+            }
+            else
+            {
+                // Fallback to older method
+                GetPhysicallyInstalledSystemMemory(out long totalMemoryKB);
+                ramTotalGB = Math.Round(totalMemoryKB / 1024.0 / 1024.0, 2);
+                Logger.LogDebug("Physical RAM detected (fallback): {TotalGB} GB", ramTotalGB);
+            }
+
+            // Initialize GPU counters - track ALL engine types, not just 3D
             try
             {
                 Logger.LogInformation("Detecting GPU performance counters...");
@@ -560,59 +630,54 @@
 
                     Logger.LogDebug("Found {Count} GPU Engine instances", instanceNames.Length);
 
-                    // Find and create counters for ALL 3D engine instances (works across all GPU brands)
-                    // engtype_3D is the standard Windows performance counter for 3D rendering workload
+                    // Create counters for ALL GPU engines (3D, Compute, Copy, Video)
                     foreach (var instance in instanceNames)
                     {
-                        if (instance.Contains("engtype_3D", StringComparison.OrdinalIgnoreCase))
+                        try
                         {
-                            try
-                            {
-                                var counter = new PerformanceCounter("GPU Engine", "Utilization Percentage", instance);
-                                counter.NextValue(); // Initialize counter
-                                gpuCounters.Add(counter);
-                                Logger.LogDebug("GPU 3D Engine counter added: {Instance}", instance);
-                            }
-                            catch (Exception ex)
-                            {
-                                Logger.LogDebug(ex, "Failed to add GPU counter for instance: {Instance}", instance);
-                            }
+                            var counter = new PerformanceCounter("GPU Engine", "Utilization Percentage", instance);
+                            counter.NextValue(); // Warm up counter
+                            gpuCounters.Add(counter);
+                            Logger.LogDebug("GPU Engine counter added: {Instance}", instance);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogDebug(ex, "Failed to add GPU counter for instance: {Instance}", instance);
                         }
                     }
 
                     if (gpuCounters.Count > 0)
                     {
                         hasGpuCounter = true;
-                        Logger.LogInformation("GPU monitoring enabled: Successfully initialized {Count} GPU 3D engine counter(s)", gpuCounters.Count);
+                        Logger.LogInformation("GPU monitoring enabled: Successfully initialized {Count} GPU engine counter(s)", gpuCounters.Count);
                     }
                     else
                     {
-                        Logger.LogWarning("GPU monitoring disabled: No GPU 3D engine counters found (this is normal for some older GPUs or driver versions)");
+                        Logger.LogWarning("GPU monitoring disabled: No GPU engine counters found");
                         hasGpuCounter = false;
                     }
                 }
                 else
                 {
-                    Logger.LogWarning("GPU monitoring disabled: GPU Engine performance category not available (requires Windows 10 Fall Creators Update or later with compatible GPU drivers)");
+                    Logger.LogWarning("GPU monitoring disabled: GPU Engine performance category not available");
                     hasGpuCounter = false;
                 }
             }
             catch (Exception gpuEx)
             {
-                Logger.LogWarning(gpuEx, "GPU monitoring disabled: Could not initialize GPU counters. This is normal for older systems or certain GPU configurations.");
+                Logger.LogWarning(gpuEx, "GPU monitoring disabled: Could not initialize GPU counters");
                 hasGpuCounter = false;
             }
 
-            // Get total RAM using WMI
-            GetPhysicallyInstalledSystemMemory(out long totalMemoryKB);
-            ramTotalGB = Math.Round(totalMemoryKB / 1024.0 / 1024.0, 2);
-
-            // Cache current process to avoid creating new ones every update
+            // Cache current process
             currentProcess = Process.GetCurrentProcess();
 
-            // First read to initialize counters
+            // Warm up counters with initial reads
             cpuCounter.NextValue();
             ramCounter.NextValue();
+
+            // Wait a brief moment for CPU counter to stabilize (required for accurate first reading)
+            Thread.Sleep(100);
 
             // Mark initialization as complete
             resourceMonitoringInitialized = true;
@@ -620,8 +685,8 @@
             // Do an immediate first update to show data right away
             UpdateResources(null, null!);
 
-            // Start monitoring timer (2 seconds for better responsiveness)
-            resourceTimer = new System.Timers.Timer(2000);
+            // Start monitoring timer at 1000ms for Task Manager-like responsiveness
+            resourceTimer = new System.Timers.Timer(1000);
             resourceTimer.Elapsed += UpdateResources;
             resourceTimer.Start();
 
@@ -647,25 +712,72 @@
             var cpuValue = cpuCounter?.NextValue() ?? 0;
             cpuUsage = (int)Math.Round(Math.Clamp(cpuValue, 0, 100));
 
-            // Get RAM usage - ensure it's between 0-100
-            var ramValue = ramCounter?.NextValue() ?? 0;
-            ramUsage = (int)Math.Round(Math.Clamp(ramValue, 0, 100));
+            // Get RAM usage using GlobalMemoryStatusEx for accuracy
+            var memStatus = new MEMORYSTATUSEX();
+            if (GlobalMemoryStatusEx(memStatus))
+            {
+                // Calculate actual physical RAM usage percentage
+                var usedPhys = memStatus.ullTotalPhys - memStatus.ullAvailPhys;
+                ramUsage = (int)Math.Round(Math.Clamp((usedPhys * 100.0 / memStatus.ullTotalPhys), 0, 100));
+                ramUsedGB = Math.Round(usedPhys / 1024.0 / 1024.0 / 1024.0, 2);
+            }
+            else
+            {
+                // Fallback to committed bytes percentage
+                var ramValue = ramCounter?.NextValue() ?? 0;
+                ramUsage = (int)Math.Round(Math.Clamp(ramValue, 0, 100));
+                ramUsedGB = Math.Round((ramUsage / 100.0) * ramTotalGB, 2);
+            }
 
-            // Get GPU usage - read from pre-created counters and calculate average for better accuracy
+            // Get GPU usage - parse LUIDs and aggregate by adapter (Task Manager method)
             if (hasGpuCounter && gpuCounters.Count > 0)
             {
                 try
                 {
-                    float totalGpu = 0;
-                    int validCounters = 0;
+                    // Dictionary to track adapters by LUID
+                    var adapters = new Dictionary<string, GpuAdapter>();
 
                     foreach (var counter in gpuCounters)
                     {
                         try
                         {
+                            var instanceName = counter.InstanceName;
                             var value = counter.NextValue();
-                            totalGpu += value;
-                            validCounters++;
+
+                            // Parse LUID from instance name (format: "pid_1234_luid_0xABCD1234_0xEF567890_phys_0_engtype_3D")
+                            var luid = ExtractLuid(instanceName);
+                            if (string.IsNullOrEmpty(luid))
+                                continue;
+
+                            // Get or create adapter entry
+                            if (!adapters.ContainsKey(luid))
+                            {
+                                adapters[luid] = new GpuAdapter { Luid = luid };
+                            }
+
+                            var adapter = adapters[luid];
+
+                            // Sum all engine utilizations for this adapter
+                            adapter.TotalUtilization += value;
+
+                            // Track by engine type for detailed monitoring
+                            if (instanceName.Contains("engtype_3D", StringComparison.OrdinalIgnoreCase))
+                            {
+                                adapter.Utilization3D += value;
+                            }
+                            else if (instanceName.Contains("engtype_Compute", StringComparison.OrdinalIgnoreCase))
+                            {
+                                adapter.UtilizationCompute += value;
+                            }
+                            else if (instanceName.Contains("engtype_Copy", StringComparison.OrdinalIgnoreCase))
+                            {
+                                adapter.UtilizationCopy += value;
+                            }
+                            else if (instanceName.Contains("engtype_VideoDecode", StringComparison.OrdinalIgnoreCase) ||
+                                     instanceName.Contains("engtype_VideoEncode", StringComparison.OrdinalIgnoreCase))
+                            {
+                                adapter.UtilizationVideo += value;
+                            }
                         }
                         catch (Exception counterEx)
                         {
@@ -673,11 +785,25 @@
                         }
                     }
 
-                    if (validCounters > 0)
+                    // Find the adapter with highest total utilization (like Task Manager does)
+                    if (adapters.Count > 0)
                     {
-                        // Average all GPU 3D engines for more accurate representation
-                        var avgGpu = totalGpu / validCounters;
-                        gpuUsage = (int)Math.Round(Math.Clamp(avgGpu, 0, 100));
+                        var primaryAdapter = adapters.Values.OrderByDescending(a => a.TotalUtilization).First();
+
+                        // Clamp to 0-100 range
+                        gpuUsage = (int)Math.Round(Math.Clamp(primaryAdapter.TotalUtilization, 0, 100));
+
+                        Logger.LogTrace("GPU Adapter {Luid}: Total={Total}%, 3D={D3D}%, Compute={Compute}%, Copy={Copy}%, Video={Video}%",
+                            primaryAdapter.Luid,
+                            primaryAdapter.TotalUtilization,
+                            primaryAdapter.Utilization3D,
+                            primaryAdapter.UtilizationCompute,
+                            primaryAdapter.UtilizationCopy,
+                            primaryAdapter.UtilizationVideo);
+                    }
+                    else
+                    {
+                        gpuUsage = 0;
                     }
                 }
                 catch (Exception gpuEx)
@@ -686,9 +812,6 @@
                     gpuUsage = 0;
                 }
             }
-
-            // Calculate used RAM
-            ramUsedGB = Math.Round((ramUsage / 100.0) * ramTotalGB, 2);
 
             // Get current process memory - use cached process to avoid lag
             if (currentProcess != null)
@@ -708,8 +831,8 @@
             }
 
             // Log resource usage periodically for debugging
-            Logger.LogTrace("Resource Update - CPU: {CPU}%, RAM: {RAM}%, GPU: {GPU}%, Process: {Process}MB",
-                cpuUsage, ramUsage, gpuUsage, processMemoryMB);
+            Logger.LogTrace("Resource Update - CPU: {CPU}%, RAM: {RAM}% ({Used}/{Total} GB), GPU: {GPU}%, Process: {Process}MB",
+                cpuUsage, ramUsage, ramUsedGB, ramTotalGB, gpuUsage, processMemoryMB);
 
             if (!_isDisposed)
                 InvokeAsync(StateHasChanged);
@@ -717,6 +840,33 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error updating resource usage");
+        }
+    }
+
+    private string ExtractLuid(string instanceName)
+    {
+        try
+        {
+            // Instance name format: "pid_1234_luid_0x00000000_0x0000D4CB_phys_0_engtype_3D_262948"
+            // Extract the LUID portion (luid_0xXXXXXXXX_0xXXXXXXXX)
+
+            var luidIndex = instanceName.IndexOf("luid_", StringComparison.OrdinalIgnoreCase);
+            if (luidIndex < 0)
+                return string.Empty;
+
+            var luidStart = luidIndex;
+
+            // Find the end marker "_phys_"
+            var physIndex = instanceName.IndexOf("_phys_", luidStart, StringComparison.OrdinalIgnoreCase);
+            if (physIndex < 0)
+                return string.Empty;
+
+            // Extract the LUID string between "luid_" and "_phys_"
+            return instanceName.Substring(luidStart, physIndex - luidStart);
+        }
+        catch
+        {
+            return string.Empty;
         }
     }
 
