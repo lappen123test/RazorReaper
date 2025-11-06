@@ -59,17 +59,17 @@
                             }
                         </button>
 
-                        <button class="server-btn connect" @onclick="ConnectToServer" disabled="@(currentServer == null)">
+                        <button class="server-btn connect" @onclick="ConnectToServer" disabled="@IsServerNull()">
                             Connect
                         </button>
                     </div>
 
                     <div class="button-grid">
-                        <button class="server-btn save" @onclick="SaveServer" disabled="@(currentServer == null)">
+                        <button class="server-btn save" @onclick="SaveServer" disabled="@IsServerNull()">
                             Save
                         </button>
 
-                        <button class="server-btn favorite" @onclick="AddToSteamFavorites" disabled="@(currentServer == null)">
+                        <button class="server-btn favorite" @onclick="AddToSteamFavorites" disabled="@IsServerNull()">
                             Add to Steam
                         </button>
                     </div>
@@ -271,6 +271,9 @@
     private Timer? refreshTimer;
     private bool isPageActive = true;
     private bool _isDisposed = false;
+
+    // Helper method for boolean attributes
+    private bool IsServerNull() => currentServer == null;
 
     protected override async Task OnInitializedAsync()
     {

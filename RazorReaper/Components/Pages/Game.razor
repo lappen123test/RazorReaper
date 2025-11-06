@@ -51,7 +51,7 @@
                         Launch Game
                     </button>
 
-                    <button class="game-btn danger" @onclick="CloseGame" disabled="@(!isGameRunning)">
+                    <button class="game-btn danger" @onclick="CloseGame" disabled="@IsGameNotRunning()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                             <line x1="9" y1="9" x2="15" y2="15" />
@@ -60,7 +60,7 @@
                         Close Game
                     </button>
 
-                    <button class="game-btn success" @onclick="ExecuteReconnect" disabled="@(!isGameRunning)">
+                    <button class="game-btn success" @onclick="ExecuteReconnect" disabled="@IsGameNotRunning()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2.35 0 4.48.9 6.07 2.38" />
                             <polyline points="21 4 21 12 13 12" />
@@ -68,7 +68,7 @@
                         Reconnect
                     </button>
 
-                    <button class="game-btn warning" @onclick="ExecuteDisconnect" disabled="@(!isGameRunning)">
+                    <button class="game-btn warning" @onclick="ExecuteDisconnect" disabled="@IsGameNotRunning()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
                             <line x1="12" y1="2" x2="12" y2="12" />
@@ -76,7 +76,7 @@
                         Disconnect
                     </button>
 
-                    <button class="game-btn info" @onclick="ExecuteDebugStructures" disabled="@(!isGameRunning)">
+                    <button class="game-btn info" @onclick="ExecuteDebugStructures" disabled="@IsGameNotRunning()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                         </svg>
@@ -120,6 +120,9 @@
 
     private bool isGameRunning = false;
     private Timer? statusTimer;
+
+    // Helper method for boolean attributes
+    private bool IsGameNotRunning() => !isGameRunning;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -290,7 +293,7 @@
         StateHasChanged();
     }
 
-    private async Task CloseGame()
+    private Task CloseGame()
     {
         try
         {
@@ -325,6 +328,7 @@
         }
 
         StateHasChanged();
+        return Task.CompletedTask;
     }
 
     private async Task CheckPaths()
