@@ -94,24 +94,27 @@
 
 .search-icon {
     position: absolute;
-    left: 0.875rem;
+    left: 0.75rem;
     top: 50%;
     transform: translateY(-50%);
     width: 16px;
     height: 16px;
     color: var(--text-secondary);
     pointer-events: none;
+    z-index: 1;
 }
 
 .search-input {
     width: 100%;
-    padding: 0.7rem 0.875rem 0.7rem 2.75rem;
+    padding: 0.7rem 0.875rem 0.7rem 2.5rem;
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
     color: var(--text-primary);
     font-size: 0.9rem;
     transition: all 0.2s ease;
+    position: relative;
+    z-index: 2;
 }
 
 .search-input:focus {

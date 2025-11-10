@@ -161,7 +161,7 @@ html {
     color: var(--text-secondary) !important;
     text-decoration: none !important;
     border-radius: 8px !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transition: color 0.2s ease, background 0.2s ease, border-left-color 0.2s ease !important;
     font-weight: 500 !important;
     font-size: 0.875rem !important;
     position: relative !important;
@@ -187,18 +187,14 @@ html {
     .nav-link:hover {
         color: var(--text-primary) !important;
         background: rgba(255, 255, 255, 0.1) !important;
-        transform: translateX(4px) !important;
-        box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1) !important;
         border-left-color: rgba(255, 255, 255, 0.3) !important;
     }
 
     .nav-link.active {
         color: var(--text-primary) !important;
         background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05)) !important;
-        border-left: 3px solid var(--text-primary) !important;
+        border-left-color: var(--text-primary) !important;
         font-weight: 600 !important;
-        box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2) !important;
-        transform: translateX(4px) !important;
     }
 
         .nav-link.active::after {
