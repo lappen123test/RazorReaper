@@ -1,0 +1,289 @@
+@page "/dino-prices"
+
+<div class="app-container">
+    <RazorReaper.Components.Shared.SharedNavbar />
+
+    <main class="main-content">
+        <header class="page-header">
+            <h1 class="page-title">Gen2 Mutagen Dino Prices</h1>
+            <p class="page-subtitle">Browse creature mutation values and filter by tier</p>
+        </header>
+
+        <div class="dino-layout">
+            <!-- Sidebar Filters -->
+            <div class="dino-sidebar">
+                <div class="filter-card">
+                    <div class="card-header">
+                        <div class="icon-badge">
+                            <svg fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3>Filters</h3>
+                            <p>Sort by value tier</p>
+                        </div>
+                    </div>
+
+                    <div class="filter-content">
+                        <div class="filter-section">
+                            <label class="filter-label">Search by Name</label>
+                            <div class="search-wrapper">
+                                <svg class="search-icon" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                                </svg>
+                                <input type="text"
+                                       class="search-input"
+                                       placeholder="Search dinos..."
+                                       @bind="searchQuery"
+                                       @bind:event="oninput" />
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <label class="filter-label">Value Tiers</label>
+                            <div class="tier-buttons">
+                                <button class="tier-btn @(selectedTier == "all" ? "active" : "")"
+                                        @onclick='() => SetTier("all")'>
+                                    All
+                                </button>
+                                <button class="tier-btn elite @(selectedTier == "elite" ? "active" : "")"
+                                        @onclick='() => SetTier("elite")'>
+                                    Elite (90+)
+                                </button>
+                                <button class="tier-btn high @(selectedTier == "high" ? "active" : "")"
+                                        @onclick='() => SetTier("high")'>
+                                    High (70-89)
+                                </button>
+                                <button class="tier-btn medium @(selectedTier == "medium" ? "active" : "")"
+                                        @onclick='() => SetTier("medium")'>
+                                    Medium (40-69)
+                                </button>
+                                <button class="tier-btn low @(selectedTier == "low" ? "active" : "")"
+                                        @onclick='() => SetTier("low")'>
+                                    Low (&lt;40)
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="filter-stats">
+                            <div class="stat-row">
+                                <span>Showing:</span>
+                                <span class="stat-value">@GetFilteredDinos().Count() / @allDinos.Count</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="dino-main">
+                <div class="dino-list-card">
+                    @if (GetFilteredDinos().Any())
+                    {
+                        <div class="dino-table">
+                            <div class="table-header">
+                                <div class="th-rank">#</div>
+                                <div class="th-name">Creature Name</div>
+                                <div class="th-value">Mutagen Value</div>
+                                <div class="th-tier">Tier</div>
+                            </div>
+                            <div class="table-body">
+                                @{
+                                    int rank = 1;
+                                    foreach (var dino in GetFilteredDinos())
+                                    {
+                                        <div class="table-row">
+                                            <div class="td-rank">@rank</div>
+                                            <div class="td-name">
+                                                <span>@dino.Name</span>
+                                            </div>
+                                            <div class="td-value">
+                                                <span class="value-badge">@dino.Value</span>
+                                            </div>
+                                            <div class="td-tier">
+                                                <span class="tier-badge">@GetTierName(dino.Value)</span>
+                                            </div>
+                                        </div>
+                                        rank++;
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="no-results">
+                            <svg fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                            </svg>
+                            <h3>No creatures found</h3>
+                            <p>Try adjusting your filters or search query</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+@code {
+    private string searchQuery = "";
+    private string selectedTier = "all";
+    private List<DinoPrice> allDinos = new List<DinoPrice>();
+
+    protected override void OnInitialized()
+    {
+        InitializeDinos();
+    }
+
+    private void InitializeDinos()
+    {
+        allDinos = new List<DinoPrice>
+        {
+            new DinoPrice { Name = "Astrocetus", Value = 99 },
+            new DinoPrice { Name = "Giganotosaurus", Value = 99 },
+            new DinoPrice { Name = "Quetzal", Value = 98 },
+            new DinoPrice { Name = "Shadowmane", Value = 95 },
+            new DinoPrice { Name = "Managarmr", Value = 94 },
+            new DinoPrice { Name = "Therizinosaur", Value = 94 },
+            new DinoPrice { Name = "Yutyrannus", Value = 94 },
+            new DinoPrice { Name = "Ankylosaurus", Value = 93 },
+            new DinoPrice { Name = "Reaper King", Value = 93 },
+            new DinoPrice { Name = "Mosasaurus", Value = 88 },
+            new DinoPrice { Name = "Rock Elemental", Value = 88 },
+            new DinoPrice { Name = "Rex", Value = 87 },
+            new DinoPrice { Name = "Tusoteuthis", Value = 87 },
+            new DinoPrice { Name = "Crystal Wyvern", Value = 85 },
+            new DinoPrice { Name = "Megalania", Value = 85 },
+            new DinoPrice { Name = "Castoroides", Value = 84 },
+            new DinoPrice { Name = "Otter", Value = 84 },
+            new DinoPrice { Name = "Doedicurus", Value = 83 },
+            new DinoPrice { Name = "Magmasaur", Value = 82 },
+            new DinoPrice { Name = "Phoenix", Value = 82 },
+            new DinoPrice { Name = "Rock Drake", Value = 82 },
+            new DinoPrice { Name = "Voidwyrm", Value = 82 },
+            new DinoPrice { Name = "Wyvern", Value = 82 },
+            new DinoPrice { Name = "Mantis", Value = 79 },
+            new DinoPrice { Name = "Ovis", Value = 79 },
+            new DinoPrice { Name = "Pteranodon", Value = 79 },
+            new DinoPrice { Name = "Basilisk", Value = 78 },
+            new DinoPrice { Name = "Basilosaurus", Value = 75 },
+            new DinoPrice { Name = "Megachelon", Value = 74 },
+            new DinoPrice { Name = "Gasbags", Value = 72 },
+            new DinoPrice { Name = "Griffin", Value = 68 },
+            new DinoPrice { Name = "Andrewsarchus", Value = 67 },
+            new DinoPrice { Name = "Astrodelphis", Value = 67 },
+            new DinoPrice { Name = "Daeodon", Value = 67 },
+            new DinoPrice { Name = "Desmodus", Value = 67 },
+            new DinoPrice { Name = "Megatherium", Value = 67 },
+            new DinoPrice { Name = "Spino", Value = 67 },
+            new DinoPrice { Name = "Tapejara", Value = 67 },
+            new DinoPrice { Name = "Tropeognathus", Value = 67 },
+            new DinoPrice { Name = "Paraceratherium", Value = 66 },
+            new DinoPrice { Name = "Carbonemys", Value = 64 },
+            new DinoPrice { Name = "Mammoth", Value = 62 },
+            new DinoPrice { Name = "Direwolf", Value = 58 },
+            new DinoPrice { Name = "Allosaurus", Value = 53 },
+            new DinoPrice { Name = "Baryonyx", Value = 52 },
+            new DinoPrice { Name = "Ferox", Value = 51 },
+            new DinoPrice { Name = "Jerboa", Value = 51 },
+            new DinoPrice { Name = "Karkinos", Value = 51 },
+            new DinoPrice { Name = "Thylacoleo", Value = 51 },
+            new DinoPrice { Name = "Roll Rat", Value = 46 },
+            new DinoPrice { Name = "Snow Owl", Value = 46 },
+            new DinoPrice { Name = "Woolly Rhino", Value = 40 },
+            new DinoPrice { Name = "Megalodon", Value = 38 },
+            new DinoPrice { Name = "Bloodstalker", Value = 36 },
+            new DinoPrice { Name = "Purlovia", Value = 33 },
+            new DinoPrice { Name = "Troodon", Value = 33 },
+            new DinoPrice { Name = "Velonasaur", Value = 33 },
+            new DinoPrice { Name = "Maewing", Value = 32 },
+            new DinoPrice { Name = "Procoptodon", Value = 32 },
+            new DinoPrice { Name = "Stegosaurus", Value = 30 },
+            new DinoPrice { Name = "Sinomacrops", Value = 29 },
+            new DinoPrice { Name = "Amargasaurus", Value = 24 },
+            new DinoPrice { Name = "Deinonychus", Value = 24 },
+            new DinoPrice { Name = "Ferox (Large)", Value = 24 },
+            new DinoPrice { Name = "Triceratops", Value = 24 },
+            new DinoPrice { Name = "Arthropluera", Value = 21 },
+            new DinoPrice { Name = "Anglerfish", Value = 18 },
+            new DinoPrice { Name = "Lymantria", Value = 16 },
+            new DinoPrice { Name = "Parasaur", Value = 15 },
+            new DinoPrice { Name = "Noglin", Value = 8 },
+            new DinoPrice { Name = "Bulbdog", Value = 6 }
+        };
+
+        // Sort by value descending, then by name
+        allDinos = allDinos.OrderByDescending(d => d.Value).ThenBy(d => d.Name).ToList();
+    }
+
+    private void SetTier(string tier)
+    {
+        selectedTier = tier;
+    }
+
+    private IEnumerable<DinoPrice> GetFilteredDinos()
+    {
+        var filtered = allDinos.AsEnumerable();
+
+        // Apply search filter
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            filtered = filtered.Where(d => d.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // Apply tier filter
+        if (selectedTier != "all")
+        {
+            filtered = selectedTier switch
+            {
+                "elite" => filtered.Where(d => d.Value >= 90),
+                "high" => filtered.Where(d => d.Value >= 70 && d.Value < 90),
+                "medium" => filtered.Where(d => d.Value >= 40 && d.Value < 70),
+                "low" => filtered.Where(d => d.Value < 40),
+                _ => filtered
+            };
+        }
+
+        return filtered;
+    }
+
+    private string GetValueClass(int value)
+    {
+        if (value >= 90) return "elite";
+        if (value >= 70) return "high";
+        if (value >= 40) return "medium";
+        return "low";
+    }
+
+    private string GetTierClass(int value)
+    {
+        if (value >= 90) return "tier-elite";
+        if (value >= 70) return "tier-high";
+        if (value >= 40) return "tier-medium";
+        return "tier-low";
+    }
+
+    private string GetTierName(int value)
+    {
+        if (value >= 90) return "Elite";
+        if (value >= 70) return "High";
+        if (value >= 40) return "Medium";
+        return "Low";
+    }
+
+    private string GetDinoIcon(int value)
+    {
+        if (value >= 90) return "👑";
+        if (value >= 70) return "⭐";
+        if (value >= 40) return "🦖";
+        return "🦴";
+    }
+
+    private class DinoPrice
+    {
+        public string Name { get; set; } = "";
+        public int Value { get; set; }
+    }
+}
