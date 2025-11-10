@@ -96,14 +96,13 @@
                                         <div class="table-row">
                                             <div class="td-rank">@rank</div>
                                             <div class="td-name">
-                                                <span class="dino-icon">@GetDinoIcon(dino.Value)</span>
                                                 <span>@dino.Name</span>
                                             </div>
                                             <div class="td-value">
-                                                <span class="value-badge @GetValueClass(dino.Value)">@dino.Value</span>
+                                                <span class="value-badge">@dino.Value</span>
                                             </div>
                                             <div class="td-tier">
-                                                <span class="tier-badge @GetTierClass(dino.Value)">@GetTierName(dino.Value)</span>
+                                                <span class="tier-badge">@GetTierName(dino.Value)</span>
                                             </div>
                                         </div>
                                         rank++;

@@ -297,11 +297,6 @@
     font-weight: 500;
 }
 
-.dino-icon {
-    font-size: 1.25rem;
-    flex-shrink: 0;
-}
-
 .td-value {
     display: flex;
     justify-content: flex-start;
@@ -313,30 +308,9 @@
     border-radius: 6px;
     font-size: 0.9rem;
     font-weight: 600;
-}
-
-.value-badge.elite {
-    background: rgba(255, 215, 0, 0.15);
-    border: 1px solid rgba(255, 215, 0, 0.3);
-    color: #ffd700;
-}
-
-.value-badge.high {
     background: rgba(139, 92, 246, 0.15);
     border: 1px solid rgba(139, 92, 246, 0.3);
     color: rgba(139, 92, 246, 1);
-}
-
-.value-badge.medium {
-    background: rgba(59, 130, 246, 0.15);
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    color: #3b82f6;
-}
-
-.value-badge.low {
-    background: rgba(107, 114, 128, 0.15);
-    border: 1px solid rgba(107, 114, 128, 0.3);
-    color: #9ca3af;
 }
 
 .td-tier {
@@ -352,26 +326,8 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-}
-
-.tier-badge.tier-elite {
-    background: rgba(255, 215, 0, 0.1);
-    color: #ffd700;
-}
-
-.tier-badge.tier-high {
-    background: rgba(139, 92, 246, 0.1);
-    color: rgba(139, 92, 246, 1);
-}
-
-.tier-badge.tier-medium {
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
-}
-
-.tier-badge.tier-low {
-    background: rgba(107, 114, 128, 0.1);
-    color: #9ca3af;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
 }
 
 /* No Results */
