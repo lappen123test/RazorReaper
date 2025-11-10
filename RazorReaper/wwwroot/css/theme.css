@@ -132,15 +132,36 @@ html {
     flex: 1 !important;
     justify-content: space-between !important;
     padding: 1rem 0 !important;
+    overflow: hidden !important;
 }
 
 .nav-menu {
     list-style: none !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 0 0.5rem 0 0 !important;
     display: flex !important;
     flex-direction: column !important;
     gap: 0.25rem !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    flex: 1 !important;
+}
+
+.nav-menu::-webkit-scrollbar {
+    width: 6px !important;
+}
+
+.nav-menu::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+.nav-menu::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 3px !important;
+}
+
+.nav-menu::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.5) !important;
 }
 
 .nav-bottom {
