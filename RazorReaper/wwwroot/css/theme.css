@@ -144,7 +144,7 @@ html {
 }
 
 .nav-bottom {
-    margin-top: auto !important;
+    margin-top: 1.5rem !important;
     padding-top: 1rem !important;
     border-top: 1px solid var(--border-color) !important;
 }
