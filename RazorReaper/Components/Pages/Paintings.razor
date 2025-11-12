@@ -9,25 +9,25 @@
     <RazorReaper.Components.Shared.SharedNavbar />
 
     <main class="main-content">
-        <header class="page-header">
+        <header class="page-header glass-card fade-in">
             <h1 class="page-title">Paintings</h1>
             <p class="page-subtitle">Manage your ingame paintings</p>
         </header>
 
         <div style="display: grid; grid-template-columns: 320px 1fr; gap: 2rem; height: calc(100vh - 200px);">
 
-            <div class="content-card" style="height: fit-content;">
+            <div class="glass-card" style="height: fit-content;">
                 <h3 class="mb-3 text-white">Folder Management</h3>
 
                 <div style="display: flex; flex-direction: column; gap: 1rem;">
-                    <button class="btn btn-primary" @onclick="OpenMyPaintingsFolder" style="width: 100%; justify-content: flex-start;">
+                    <button class="glass-button" @onclick="OpenMyPaintingsFolder" style="width: 100%; justify-content: flex-start;">
                         <svg style="width: 16px; height: 16px; margin-right: 0.75rem;" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
                         </svg>
                         Open MyPaintings Folder
                     </button>
 
-                    <button class="btn btn-secondary" @onclick="CreateMyPaintingsFolder" style="width: 100%; justify-content: flex-start;">
+                    <button class="glass-button" @onclick="CreateMyPaintingsFolder" style="width: 100%; justify-content: flex-start;">
                         <svg style="width: 16px; height: 16px; margin-right: 0.75rem;" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M5 4a3 3 0 00-3 3v6a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H9L7 2H5zM8 8a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1zm1 4a1 1 0 100 2h2a1 1 0 100-2H9z" clip-rule="evenodd" />
                         </svg>
@@ -53,7 +53,7 @@
 
             <div style="display: flex; flex-direction: column; gap: 1.5rem; height: 100%;">
 
-                <div class="content-card">
+                <div class="glass-card gentle-movement">
                     <h3 class="mb-3 text-white">Get Canvas - Templates By ArkTested</h3>
 
                     <div style="display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: center;">
@@ -81,7 +81,7 @@
                     </div>
 
                     <div style="display: flex; gap: 1rem;">
-                        <button class="btn btn-primary" @onclick="OpenCanvasWebsite">
+                        <button class="glass-button" @onclick="OpenCanvasWebsite">
                             <svg style="width: 16px; height: 16px; margin-right: 0.5rem;" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
                             </svg>
@@ -90,7 +90,7 @@
                     </div>
                 </div>
 
-                <div class="content-card" style="flex: 1;">
+                <div class="glass-card" style="flex: 1;">
                     <h3 class="mb-3 text-white">ARK Canvas Maker Tool</h3>
 
                     <div style="display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: center; margin-bottom: 2rem;">
@@ -117,14 +117,14 @@
                     </div>
 
                     <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
-                        <button class="btn btn-primary" @onclick="OpenArkCanvasMaker" style="flex: 1;">
+                        <button class="glass-button" @onclick="OpenArkCanvasMaker" style="flex: 1;">
                             <svg style="width: 16px; height: 16px; margin-right: 0.5rem;" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
                             </svg>
                             Download ARK Canvas Maker
                         </button>
 
-                        <button class="btn btn-secondary" @onclick="ShowArkCanvasInfo">
+                        <button class="glass-button" @onclick="ShowArkCanvasInfo">
                             <svg style="width: 16px; height: 16px; margin-right: 0.5rem;" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
                             </svg>

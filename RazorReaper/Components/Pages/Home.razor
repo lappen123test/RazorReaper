@@ -22,13 +22,13 @@
     <RazorReaper.Components.Shared.SharedNavbar/>
 
     <main class="main-content">
-        <header class="page-header">
+        <header class="page-header glass-card fade-in">
             <h1 class="page-title">Welcome, @userName</h1>
             <p class="page-subtitle">ARK: Survival Evolved Configuration & Server Management Tool</p>
         </header>
 
         <div class="dashboard-widgets">
-            <div class="content-card widget-card clock-widget">
+            <div class="widget-card clock-widget glass-card gentle-movement">
                 <div class="widget-header">
                     <svg fill="currentColor" viewBox="0 0 20 20" class="widget-icon">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
@@ -55,7 +55,7 @@
                 </div>
             </div>
 
-            <div class="content-card widget-card weather-widget">
+            <div class="widget-card weather-widget glass-card gentle-movement">
                 <div class="widget-header">
                     <svg fill="currentColor" viewBox="0 0 20 20" class="widget-icon">
                         <path fill-rule="evenodd" d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z" clip-rule="evenodd" />
@@ -95,14 +95,14 @@
                 {
                     <div class="weather-error-simple">
                         <p>Weather unavailable</p>
-                        <button class="btn-small btn-retry" @onclick="LoadWeatherData">
+                        <button class="glass-button" @onclick="LoadWeatherData">
                             Retry
                         </button>
                     </div>
                 }
             </div>
 
-            <div class="content-card widget-card stats-widget">
+            <div class="widget-card stats-widget glass-card gentle-movement">
                 <div class="widget-header">
                     <svg fill="currentColor" viewBox="0 0 20 20" class="widget-icon">
                         <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
@@ -125,7 +125,7 @@
                 </div>
             </div>
 
-            <div class="content-card widget-card resource-widget">
+            <div class="widget-card resource-widget glass-card gentle-movement">
                 <div class="widget-header">
                     <svg fill="currentColor" viewBox="0 0 20 20" class="widget-icon">
                         <path fill-rule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7H5V5h10v7H8.771z" clip-rule="evenodd" />
@@ -188,7 +188,7 @@
                 }
             </div>
 
-            <div class="content-card widget-card wifi-widget">
+            <div class="widget-card wifi-widget glass-card gentle-movement">
                 <div class="widget-header">
                     <svg fill="currentColor" viewBox="0 0 20 20" class="widget-icon">
                         <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
@@ -208,7 +208,7 @@
                 </div>
             </div>
 
-            <div class="content-card widget-card hardware-widget">
+            <div class="widget-card hardware-widget glass-card gentle-movement">
                 <div class="widget-header">
                     <svg fill="currentColor" viewBox="0 0 20 20" class="widget-icon">
                         <path fill-rule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7H5V5h10v7H8.771z" clip-rule="evenodd" />
@@ -232,11 +232,11 @@
             </div>
         </div>
 
-        <div class="content-card">
+        <div class="glass-card">
             <h2>Quick Actions</h2>
             <div class="actions-grid">
 
-                <a href="/server" class="action-card">
+                <a href="/server" class="action-card gentle-movement">
                     <div class="action-icon server">
                         <svg fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm14 1a1 1 0 11-2 0 1 1 0 012 0zM2 13a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2zm14 1a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd" />
@@ -245,11 +245,11 @@
                     <div class="action-content">
                         <h3>Connect to Server</h3>
                         <p>Quick connect to ARK servers via Battle Matrix connection method</p>
-                        <div class="action-button">Connect Now</div>
+                        <div class="glass-button">Connect Now</div>
                     </div>
                 </a>
 
-                <a href="/ini-changer" class="action-card">
+                <a href="/ini-changer" class="action-card gentle-movement">
                     <div class="action-icon config">
                         <svg fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
@@ -258,11 +258,11 @@
                     <div class="action-content">
                         <h3>BaseDeviceProfiles Editor</h3>
                         <p>Load, modify, and apply optimized configuration presets</p>
-                        <div class="action-button">Edit Configs</div>
+                        <div class="glass-button">Edit Configs</div>
                     </div>
                 </a>
 
-                <a href="/game" class="action-card">
+                <a href="/game" class="action-card gentle-movement">
                     <div class="action-icon game">
                         <svg fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
@@ -271,17 +271,17 @@
                     <div class="action-content">
                         <h3>Game Management</h3>
                         <p>Manage game settings, backups, and advanced configurations</p>
-                        <div class="action-button">Manage Game</div>
+                        <div class="glass-button">Manage Game</div>
                     </div>
                 </a>
 
             </div>
         </div>
 
-        <div class="content-card activity-card">
+        <div class="activity-card glass-card">
             <div class="activity-header">
                 <h3 class="activity-title">Recent Activity</h3>
-                <button class="btn-small" @onclick="ClearActivity">Clear All</button>
+                <button class="glass-button" @onclick="ClearActivity">Clear All</button>
             </div>
             <div class="activity-timeline-container">
                 @if (ActivityService.GetRecentActivities().Count == 0)
@@ -335,12 +335,12 @@
             </div>
         </div>
 
-        <div class="content-card">
+        <div class="glass-card">
             <div class="paths-header">
                 <h3>System Paths</h3>
                 @if (!isEditingArkPath)
                 {
-                    <button class="btn-small btn-edit" @onclick="StartEditingArkPath">
+                    <button class="glass-button" @onclick="StartEditingArkPath">
                         <svg fill="currentColor" viewBox="0 0 20 20" style="width: 14px; height: 14px;">
                             <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                         </svg>
@@ -362,19 +362,19 @@
                         <input type="text" @bind="customArkPath" placeholder="C:\Program Files (x86)\Steam\steamapps\common\ARK" class="ark-path-input" />
                     </div>
                     <div class="path-edit-actions">
-                        <button class="btn btn-secondary" @onclick="SaveCustomArkPath">
+                        <button class="glass-button" @onclick="SaveCustomArkPath">
                             <svg fill="currentColor" viewBox="0 0 20 20" style="width: 16px; height: 16px;">
                                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                             </svg>
                             Save Path
                         </button>
-                        <button class="btn btn-secondary" @onclick="CancelEditingArkPath">
+                        <button class="glass-button" @onclick="CancelEditingArkPath">
                             <svg fill="currentColor" viewBox="0 0 20 20" style="width: 16px; height: 16px;">
                                 <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
                             </svg>
                             Cancel
                         </button>
-                        <button class="btn btn-secondary" @onclick="ResetToAutoDetect">
+                        <button class="glass-button" @onclick="ResetToAutoDetect">
                             <svg fill="currentColor" viewBox="0 0 20 20" style="width: 16px; height: 16px;">
                                 <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
                             </svg>
@@ -385,7 +385,7 @@
             }
 
             <div class="paths-list">
-                <div class="path-item clickable" @onclick="() => OpenFolderInExplorer(arkInstallPath)">
+                <div class="path-item clickable gentle-movement" @onclick="() => OpenFolderInExplorer(arkInstallPath)">
                     <div class="path-info-left">
                         <div class="path-icon-container">
                             <svg fill="currentColor" viewBox="0 0 20 20">
@@ -404,7 +404,7 @@
                         </svg>
                     </div>
                 </div>
-                <div class="path-item clickable" @onclick="() => OpenFolderInExplorer(configPath)">
+                <div class="path-item clickable gentle-movement" @onclick="() => OpenFolderInExplorer(configPath)">
                     <div class="path-info-left">
                         <div class="path-icon-container">
                             <svg fill="currentColor" viewBox="0 0 20 20">

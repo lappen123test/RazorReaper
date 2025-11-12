@@ -11,14 +11,14 @@
     <RazorReaper.Components.Shared.SharedNavbar />
 
     <main class="main-content">
-        <header class="page-header">
+        <header class="page-header glass-card fade-in">
             <h1 class="page-title">Auto Clicker</h1>
             <p class="page-subtitle">Advanced mouse automation tool</p>
         </header>
 
         <div class="autoclicker-layout">
             <div class="control-panel">
-                <div class="content-card">
+                <div class="glass-card">
                     <h3>Click Settings</h3>
 
                     <div class="setting-group">
@@ -139,13 +139,13 @@
                     </div>
                 </div>
 
-                <div class="content-card">
+                <div class="glass-card">
                     <h3>Hotkey</h3>
 
                     <div class="hotkey-group">
                         <div class="hotkey-item">
                             <span class="hotkey-label">Start/Stop Hotkey</span>
-                            <button class="hotkey-btn @(recordingKey ? "recording" : "")"
+                            <button class="glass-button @(recordingKey ? "recording" : "")"
                                     @onclick="StartHotkeyRecording"
                                     @onkeydown="CaptureHotkey"
                                     @onkeydown:preventDefault="true"
@@ -164,18 +164,18 @@
                 </div>
 
                 <div class="control-buttons">
-                    <button class="btn btn-primary @(isRunning ? "btn-stop" : "btn-start")"
+                    <button class="glass-button @(isRunning ? "glass-button-cta" : "")"
                             @onclick="ToggleClicking" disabled="@IsStartButtonDisabled()">
                         @(isRunning ? "Stop" : "Start") (@hotkey)
                     </button>
-                    <button class="btn btn-secondary" @onclick="ResetStats">
+                    <button class="glass-button" @onclick="ResetStats">
                         Reset
                     </button>
                 </div>
             </div>
 
             <div class="status-panel">
-                <div class="content-card">
+                <div class="glass-card">
                     <h3>Click Position</h3>
 
                     <div class="position-options">
@@ -260,7 +260,7 @@
                     </div>
                 </div>
 
-                <div class="content-card autoclicker-status-card @(isRunning ? "active" : "")">
+                <div class="glass-card autoclicker-status-card @(isRunning ? "active" : "")">
                     <div class="autoclicker-status-header">
                         <div class="autoclicker-status-indicator @(isRunning ? "running" : "stopped")"></div>
                         <h3>Status</h3>
@@ -301,7 +301,7 @@
                     </div>
                 </div>
 
-                <div class="content-card">
+                <div class="glass-card">
                     <h3>Profiles</h3>
                     <div class="profile-controls">
                         <select class="profile-select" @onchange="LoadProfile">
@@ -312,8 +312,8 @@
                             }
                         </select>
                         <div class="profile-buttons">
-                            <button class="btn-small" @onclick="ShowSaveProfileDialog">Save</button>
-                            <button class="btn-small" @onclick="ShowDeleteProfileDialog" disabled="@IsDeleteProfileDisabled()">Delete</button>
+                            <button class="glass-button" @onclick="ShowSaveProfileDialog">Save</button>
+                            <button class="glass-button" @onclick="ShowDeleteProfileDialog" disabled="@IsDeleteProfileDisabled()">Delete</button>
                         </div>
                     </div>
                     @if (showSaveDialog)
@@ -321,8 +321,8 @@
                         <div class="profile-dialog">
                             <input type="text" @bind="newProfileName" placeholder="Profile name..." class="profile-input" />
                             <div class="dialog-buttons">
-                                <button class="btn-small" @onclick="SaveCurrentProfile">Save</button>
-                                <button class="btn-small" @onclick="() => showSaveDialog = false">Cancel</button>
+                                <button class="glass-button" @onclick="SaveCurrentProfile">Save</button>
+                                <button class="glass-button" @onclick="() => showSaveDialog = false">Cancel</button>
                             </div>
                         </div>
                     }
@@ -337,14 +337,14 @@
                                 }
                             </select>
                             <div class="dialog-buttons">
-                                <button class="btn-small" @onclick="DeleteProfile" disabled="@IsDeleteButtonDisabled()">Delete</button>
-                                <button class="btn-small" @onclick="() => showDeleteDialog = false">Cancel</button>
+                                <button class="glass-button" @onclick="DeleteProfile" disabled="@IsDeleteButtonDisabled()">Delete</button>
+                                <button class="glass-button" @onclick="() => showDeleteDialog = false">Cancel</button>
                             </div>
                         </div>
                     }
                 </div>
 
-                <div class="content-card">
+                <div class="glass-card">
                     <h3>Session Statistics</h3>
                     <div class="status-info">
                         <div class="status-row">
@@ -361,7 +361,7 @@
                         </div>
                     </div>
                     <div class="heatmap-button-container">
-                        <button class="btn btn-secondary" @onclick="ShowHeatmap" disabled="@IsHeatmapDisabled()">
+                        <button class="glass-button" @onclick="ShowHeatmap" disabled="@IsHeatmapDisabled()">
                             <svg fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
                             </svg>
@@ -377,10 +377,10 @@
 @if (showHeatmapModal)
 {
     <div class="modal-overlay" @onclick="CloseHeatmap">
-        <div class="modal-content heatmap-modal" @onclick:stopPropagation="true">
+        <div class="modal-content heatmap-modal glass-card" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2>Click Heatmap</h2>
-                <button class="modal-close" @onclick="CloseHeatmap">
+                <button class="glass-button" @onclick="CloseHeatmap">
                     <svg fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
                     </svg>
@@ -403,8 +403,8 @@
                         </div>
                     </div>
                     <div class="heatmap-actions">
-                        <button class="btn-small" @onclick="ClearHeatmapData">Clear Data</button>
-                        <button class="btn-small" @onclick="ExportHeatmapData">Export CSV</button>
+                        <button class="glass-button" @onclick="ClearHeatmapData">Clear Data</button>
+                        <button class="glass-button" @onclick="ExportHeatmapData">Export CSV</button>
                     </div>
                 </div>
                 <div class="heatmap-canvas-container">

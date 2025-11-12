@@ -1,0 +1,54 @@
+:root {
+    --background-color: #0a0a0f;
+    --primary-text-color: #ffffff;
+    --secondary-text-color: #cccccc;
+    --accent-color: #ff00ff;
+    --accent-color-deep-purple: #7a00ff;
+    --accent-color-violet: #b266ff;
+    --border-radius: 12px;
+    --blur-strength: 10px;
+    --glow-strength: 0 0 15px var(--accent-color);
+}
+
+body {
+    background-color: var(--background-color);
+    color: var(--primary-text-color);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--primary-text-color);
+    margin: 0;
+    padding: 1rem 0;
+    font-weight: 600;
+}
+
+h1 {
+    font-size: 2.5rem;
+}
+
+h2 {
+    font-size: 2rem;
+}
+
+h3 {
+    font-size: 1.5rem;
+}
+
+p {
+    color: var(--secondary-text-color);
+    line-height: 1.6;
+}
+
+a {
+    color: var(--accent-color);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: var(--accent-color-violet);
+}

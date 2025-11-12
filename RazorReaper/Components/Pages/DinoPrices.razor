@@ -4,7 +4,7 @@
     <RazorReaper.Components.Shared.SharedNavbar />
 
     <main class="main-content">
-        <header class="page-header">
+        <header class="page-header glass-card fade-in">
             <h1 class="page-title">Gen2 Mutagen Dino Prices</h1>
             <p class="page-subtitle">Browse creature mutation values and filter by tier</p>
         </header>
@@ -12,7 +12,7 @@
         <div class="dino-layout">
             <!-- Sidebar Filters -->
             <div class="dino-sidebar">
-                <div class="filter-card">
+                <div class="filter-card glass-card gentle-movement">
                     <div class="card-header">
                         <div class="icon-badge">
                             <svg fill="currentColor" viewBox="0 0 20 20">
@@ -43,23 +43,23 @@
                         <div class="filter-section">
                             <label class="filter-label">Value Tiers</label>
                             <div class="tier-buttons">
-                                <button class="tier-btn @(selectedTier == "all" ? "active" : "")"
+                                <button class="glass-button @(selectedTier == "all" ? "active" : "")"
                                         @onclick='() => SetTier("all")'>
                                     All
                                 </button>
-                                <button class="tier-btn elite @(selectedTier == "elite" ? "active" : "")"
+                                <button class="glass-button elite @(selectedTier == "elite" ? "active" : "")"
                                         @onclick='() => SetTier("elite")'>
                                     Elite (90+)
                                 </button>
-                                <button class="tier-btn high @(selectedTier == "high" ? "active" : "")"
+                                <button class="glass-button high @(selectedTier == "high" ? "active" : "")"
                                         @onclick='() => SetTier("high")'>
                                     High (70-89)
                                 </button>
-                                <button class="tier-btn medium @(selectedTier == "medium" ? "active" : "")"
+                                <button class="glass-button medium @(selectedTier == "medium" ? "active" : "")"
                                         @onclick='() => SetTier("medium")'>
                                     Medium (40-69)
                                 </button>
-                                <button class="tier-btn low @(selectedTier == "low" ? "active" : "")"
+                                <button class="glass-button low @(selectedTier == "low" ? "active" : "")"
                                         @onclick='() => SetTier("low")'>
                                     Low (&lt;40)
                                 </button>
@@ -78,7 +78,7 @@
 
             <!-- Main Content Area -->
             <div class="dino-main">
-                <div class="dino-list-card">
+                <div class="dino-list-card glass-card">
                     @if (GetFilteredDinos().Any())
                     {
                         <div class="dino-table">

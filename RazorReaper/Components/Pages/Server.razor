@@ -17,13 +17,13 @@
     <RazorReaper.Components.Shared.SharedNavbar />
 
     <main class="main-content">
-        <header class="page-header">
+        <header class="page-header glass-card fade-in">
             <h1 class="page-title">Server Management</h1>
             <p class="page-subtitle">Connect and manage ARK servers</p>
         </header>
 
         <div class="server-layout">
-            <div class="content-card server-connection-panel">
+            <div class="server-connection-panel glass-card">
                 <h3>Server Connection</h3>
 
                 <div class="connection-form">
@@ -47,7 +47,7 @@
                     }
 
                     <div class="button-grid">
-                        <button class="server-btn query" @onclick="QueryServer" disabled="@isQuerying">
+                        <button class="glass-button" @onclick="QueryServer" disabled="@isQuerying">
                             @if (isQuerying)
                             {
                                 <div class="server-spinner"></div>
@@ -59,22 +59,22 @@
                             }
                         </button>
 
-                        <button class="server-btn connect" @onclick="ConnectToServer" disabled="@IsServerNull()">
+                        <button class="glass-button" @onclick="ConnectToServer" disabled="@IsServerNull()">
                             Connect
                         </button>
                     </div>
 
                     <div class="button-grid">
-                        <button class="server-btn save" @onclick="SaveServer" disabled="@IsServerNull()">
+                        <button class="glass-button" @onclick="SaveServer" disabled="@IsServerNull()">
                             Save
                         </button>
 
-                        <button class="server-btn favorite" @onclick="AddToSteamFavorites" disabled="@IsServerNull()">
+                        <button class="glass-button" @onclick="AddToSteamFavorites" disabled="@IsServerNull()">
                             Add to Steam
                         </button>
                     </div>
 
-                    <button class="server-btn browser" @onclick="OpenSteamBrowser">
+                    <button class="glass-button" @onclick="OpenSteamBrowser">
                         Steam Browser
                     </button>
                 </div>
@@ -83,7 +83,7 @@
             <div class="main-column">
                 @if (currentServer != null && currentServer.IsOnline)
                 {
-                    <div class="content-card">
+                    <div class="glass-card">
                         <h4 style="color: var(--text-primary); margin-bottom: 1rem; font-size: 1.1rem; font-weight: 600;">@currentServer.Name</h4>
                         <div class="server-details-grid">
                             <div class="detail-column">
@@ -120,10 +120,10 @@
 
                 @if (showServerInfo && selectedServer != null)
                 {
-                    <div class="content-card">
+                    <div class="glass-card">
                         <div class="server-info-header">
                             <h3>@selectedServer.Name</h3>
-                            <button class="server-btn close-btn" @onclick="HideServerInfo">✕</button>
+                            <button class="glass-button" @onclick="HideServerInfo">✕</button>
                         </div>
 
                         <div class="server-details-grid">
@@ -161,7 +161,7 @@
                     </div>
                 }
 
-                <div class="content-card saved-servers-section">
+                <div class="saved-servers-section glass-card">
                     <div class="section-header">
                         <h3>Saved Servers</h3>
                         <span class="text-secondary">@servers.Count servers</span>
@@ -172,7 +172,7 @@
                         {
                             @foreach (var server in servers)
                             {
-                                <div class="server-item @(selectedServer == server ? "selected" : "")" @onclick="() => SelectServer(server)">
+                                <div class="server-item @(selectedServer == server ? "selected" : "") glass-card gentle-movement" @onclick="() => SelectServer(server)">
                                     <div class="server-item-content">
                                         <div class="server-status-dot @(server.IsOnline ? "online" : "offline")"></div>
                                         <div class="server-item-info">
@@ -184,8 +184,8 @@
                                             }
                                         </div>
                                         <div class="server-actions">
-                                            <button class="server-action-btn" @onclick:stopPropagation="true" @onclick="() => SelectServer(server)">Info</button>
-                                            <button class="server-action-btn remove" @onclick:stopPropagation="true" @onclick="() => RemoveServer(server)">Remove</button>
+                                            <button class="glass-button" @onclick:stopPropagation="true" @onclick="() => SelectServer(server)">Info</button>
+                                            <button class="glass-button remove" @onclick:stopPropagation="true" @onclick="() => RemoveServer(server)">Remove</button>
                                         </div>
                                     </div>
                                 </div>
@@ -202,10 +202,10 @@
                     </div>
                 </div>
 
-                <div class="content-card troubleshooting-section">
+                <div class="troubleshooting-section glass-card">
                     <div class="section-header">
                         <h3>Troubleshooting</h3>
-                        <button class="toggle-btn" @onclick="ToggleTroubleshooting">
+                        <button class="glass-button" @onclick="ToggleTroubleshooting">
                             @(showTroubleshooting ? "▼ Hide" : "▶ Show")
                         </button>
                     </div>

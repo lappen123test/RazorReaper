@@ -17,14 +17,14 @@
     <RazorReaper.Components.Shared.SharedNavbar />
 
     <main class="main-content">
-        <header class="page-header">
+        <header class="page-header glass-card fade-in">
             <h1 class="page-title">INI Configuration</h1>
             <p class="page-subtitle">Manage & optimize ARK configuration presets</p>
         </header>
 
         <div class="ini-layout">
             <div class="ini-operations-panel">
-                <div class="content-card">
+                <div class="glass-card">
                     <div class="section-info">
                         <div class="icon-circle white">
                             <svg fill="currentColor" viewBox="0 0 20 20">
@@ -38,28 +38,28 @@
                     </div>
 
                     <div class="file-operations">
-                        <button class="ini-btn" @onclick="OpenIniFile">
+                        <button class="glass-button" @onclick="OpenIniFile">
                             <svg fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
                             </svg>
                             Open INI File
                         </button>
 
-                        <button class="ini-btn" @onclick="CheckIniFileExists">
+                        <button class="glass-button" @onclick="CheckIniFileExists">
                             <svg fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
                             </svg>
                             Check Path
                         </button>
 
-                        <button class="ini-btn" @onclick="SaveChanges">
+                        <button class="glass-button" @onclick="SaveChanges">
                             <svg fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z" />
                             </svg>
                             Save Changes
                         </button>
 
-                        <button class="ini-btn" @onclick="ClearFile">
+                        <button class="glass-button" @onclick="ClearFile">
                             <svg fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clip-rule="evenodd" />
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
@@ -69,7 +69,7 @@
                     </div>
                 </div>
 
-                <div class="content-card">
+                <div class="glass-card">
                     <div class="section-info">
                         <div class="icon-circle white">
                             <svg fill="currentColor" viewBox="0 0 20 20">
@@ -92,14 +92,14 @@
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                        <button class="ini-btn" @onclick="CheckWaterFiles">
+                        <button class="glass-button" @onclick="CheckWaterFiles">
                             <svg fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
                             </svg>
                             Check Files
                         </button>
 
-                        <button class="ini-btn" @onclick="DeleteWaterSurfaceFiles">
+                        <button class="glass-button" @onclick="DeleteWaterSurfaceFiles">
                             <svg fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                             </svg>
@@ -114,7 +114,7 @@
             </div>
 
             <div class="ini-main-column">
-                <div class="content-card">
+                <div class="glass-card">
                     <h3>Configuration Presets</h3>
                     <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.8rem; line-height: 1.5;">
                         Optimized presets for different gameplay scenarios. Each preset is designed for performance and visual quality.
@@ -123,7 +123,7 @@
                     <div class="presets-grid">
                         @foreach (var preset in PresetService.GetAllPresets())
                         {
-                            <button class="preset-button @(selectedPreset == preset.Name ? "active" : "")"
+                            <button class="glass-button @(selectedPreset == preset.Name ? "active" : "")"
                                     @onclick="() => SelectPreset(preset)">
                                 <div class="preset-info">
                                     <div class="preset-name">@preset.Name</div>
@@ -134,20 +134,20 @@
                     </div>
                 </div>
 
-                <div class="content-card ini-content-area">
+                <div class="ini-content-area glass-card">
                     <h3>INI File Content</h3>
                     <textarea @bind="currentIniContent"
                               class="ini-textarea"
                               placeholder="INI file content will appear here..."></textarea>
                 </div>
 
-                <div class="content-card">
+                <div class="glass-card">
                     <div class="images-header">
                         <div>
                             <h3>Configuration Previews</h3>
                             <p style="color: var(--text-secondary); margin: 0; font-size: 0.75rem;">Visual examples of each preset</p>
                         </div>
-                        <button class="images-toggle-btn" @onclick="ToggleImages">
+                        <button class="glass-button" @onclick="ToggleImages">
                             @(showImages ? "▼ Hide" : "▶ Show")
                         </button>
                     </div>

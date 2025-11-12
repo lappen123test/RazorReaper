@@ -24,12 +24,12 @@
 
     <main class="main-content">
         <div class="game-page-content">
-            <header class="page-header">
+            <header class="page-header glass-card fade-in">
                 <h1 class="page-title">Game Management</h1>
                 <p class="page-subtitle">Control & Monitor ARK: Survival Evolved</p>
             </header>
 
-            <div class="content-card">
+            <div class="glass-card">
                 <div class="game-status">
                     <div class="status-indicator">
                         <div class="status-dot @(isGameRunning ? "online" : "offline")"></div>
@@ -41,17 +41,17 @@
                 </div>
             </div>
 
-            <div class="content-card">
+            <div class="glass-card">
                 <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Game Controls</h3>
                 <div class="game-actions">
-                    <button class="game-btn primary" @onclick="LaunchGame" disabled="@isGameRunning">
+                    <button class="glass-button" @onclick="LaunchGame" disabled="@isGameRunning">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polygon points="5 3 19 12 5 21 5 3" />
                         </svg>
                         Launch Game
                     </button>
 
-                    <button class="game-btn danger" @onclick="CloseGame" disabled="@IsGameNotRunning()">
+                    <button class="glass-button" @onclick="CloseGame" disabled="@IsGameNotRunning()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                             <line x1="9" y1="9" x2="15" y2="15" />
@@ -60,7 +60,7 @@
                         Close Game
                     </button>
 
-                    <button class="game-btn success" @onclick="ExecuteReconnect" disabled="@IsGameNotRunning()">
+                    <button class="glass-button" @onclick="ExecuteReconnect" disabled="@IsGameNotRunning()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2.35 0 4.48.9 6.07 2.38" />
                             <polyline points="21 4 21 12 13 12" />
@@ -68,7 +68,7 @@
                         Reconnect
                     </button>
 
-                    <button class="game-btn warning" @onclick="ExecuteDisconnect" disabled="@IsGameNotRunning()">
+                    <button class="glass-button" @onclick="ExecuteDisconnect" disabled="@IsGameNotRunning()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
                             <line x1="12" y1="2" x2="12" y2="12" />
@@ -76,7 +76,7 @@
                         Disconnect
                     </button>
 
-                    <button class="game-btn info" @onclick="ExecuteDebugStructures" disabled="@IsGameNotRunning()">
+                    <button class="glass-button" @onclick="ExecuteDebugStructures" disabled="@IsGameNotRunning()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                         </svg>
@@ -85,10 +85,10 @@
                 </div>
             </div>
 
-            <div class="content-card">
+            <div class="glass-card">
                 <h3 style="margin-bottom: 1rem; color: var(--text-primary);">ARK Installation</h3>
                 <div class="game-actions">
-                    <button class="game-btn info" @onclick="CheckPaths">
+                    <button class="glass-button" @onclick="CheckPaths">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M9 11l3 3L22 4" />
                             <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />

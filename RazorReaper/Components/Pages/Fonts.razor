@@ -14,14 +14,14 @@
     <RazorReaper.Components.Shared.SharedNavbar />
 
     <main class="main-content">
-        <header class="page-header">
+        <header class="page-header glass-card fade-in">
             <h1 class="page-title">Game Fonts</h1>
             <p class="page-subtitle">Customize ARK: Survival Evolved font settings</p>
         </header>
 
         <div class="fonts-layout">
             <div class="fonts-operations-panel">
-                <div class="content-card">
+                <div class="glass-card">
                     <div class="section-info">
                         <div class="icon-circle white">
                             <svg fill="currentColor" viewBox="0 0 20 20">
@@ -35,26 +35,26 @@
                     </div>
 
                     <div class="font-options">
-                        <button class="font-option-btn @(selectedFont == "default" ? "active" : "")"
+                        <button class="glass-button @(selectedFont == "default" ? "active" : "")"
                                 @onclick="@(() => SelectFont("default"))">
                             <div class="font-option-name">Game Default</div>
                             <div class="font-option-description">Standard ARK font</div>
                         </button>
 
-                        <button class="font-option-btn @(selectedFont == "chinese" ? "active" : "")"
+                        <button class="glass-button @(selectedFont == "chinese" ? "active" : "")"
                                 @onclick="@(() => SelectFont("chinese"))">
                             <div class="font-option-name">Asian Font</div>
                             <div class="font-option-description">Asian localization font</div>
                         </button>
 
-                        <button class="font-option-btn @(selectedFont == "global" ? "active" : "")"
+                        <button class="glass-button @(selectedFont == "global" ? "active" : "")"
                                 @onclick="@(() => SelectFont("global"))">
                             <div class="font-option-name">Global Font</div>
                             <div class="font-option-description">Enhanced custom font</div>
                         </button>
                     </div>
 
-                    <button class="fonts-btn" @onclick="OpenSteamARK" style="margin-top: 1.5rem;">
+                    <button class="glass-button" @onclick="OpenSteamARK" style="margin-top: 1.5rem;">
                         <svg fill="currentColor" viewBox="0 0 20 20" style="width: 18px; height: 18px;">
                             <path d="M10 3.5a1.5 1.5 0 013 0V4a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-.5a1.5 1.5 0 000 3h.5a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-.5a1.5 1.5 0 00-3 0v.5a1 1 0 01-1 1H6a1 1 0 01-1-1v-3a1 1 0 00-1-1h-.5a1.5 1.5 0 010-3H4a1 1 0 001-1V6a1 1 0 011-1h3a1 1 0 001-1v-.5z" />
                         </svg>
@@ -64,7 +64,7 @@
 
                 @if (selectedFont == "chinese")
                 {
-                    <div class="content-card">
+                    <div class="glass-card">
                         <div class="section-info">
                             <div class="icon-circle white">
                                 <svg fill="currentColor" viewBox="0 0 20 20">
@@ -78,14 +78,14 @@
                         </div>
 
                         <div class="installation-options">
-                            <button class="fonts-btn" @onclick="AutoInstallChineseFont" disabled="@isInstalling">
+                            <button class="glass-button" @onclick="AutoInstallChineseFont" disabled="@isInstalling">
                                 <svg fill="currentColor" viewBox="0 0 20 20">
                                     <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
                                 </svg>
                                 @(isInstalling ? "Installing..." : "Auto Install")
                             </button>
 
-                            <button class="fonts-btn" @onclick="OpenFontFolderInExplorer">
+                            <button class="glass-button" @onclick="OpenFontFolderInExplorer">
                                 <svg fill="currentColor" viewBox="0 0 20 20">
                                     <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
                                 </svg>
@@ -96,7 +96,7 @@
                 }
                 else if (selectedFont == "global")
                 {
-                    <div class="content-card">
+                    <div class="glass-card">
                         <div class="section-info">
                             <div class="icon-circle white">
                                 <svg fill="currentColor" viewBox="0 0 20 20">
@@ -110,21 +110,21 @@
                         </div>
 
                         <div class="installation-options">
-                            <button class="fonts-btn" @onclick="AutoInstallGlobalFont" disabled="@isInstalling">
+                            <button class="glass-button" @onclick="AutoInstallGlobalFont" disabled="@isInstalling">
                                 <svg fill="currentColor" viewBox="0 0 20 20">
                                     <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
                                 </svg>
                                 @(isInstalling ? "Installing..." : "Auto Install")
                             </button>
 
-                            <button class="fonts-btn" @onclick="DownloadGlobalFont">
+                            <button class="glass-button" @onclick="DownloadGlobalFont">
                                 <svg fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
                                 </svg>
                                 Download Only
                             </button>
 
-                            <button class="fonts-btn" @onclick="OpenFontFolderInExplorer">
+                            <button class="glass-button" @onclick="OpenFontFolderInExplorer">
                                 <svg fill="currentColor" viewBox="0 0 20 20">
                                     <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
                                 </svg>
@@ -138,7 +138,7 @@
             <div class="fonts-main-column">
                 @if (selectedFont == "default")
                 {
-                    <div class="content-card">
+                    <div class="glass-card">
                         <h3>Game Default Font</h3>
                         <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.85rem; line-height: 1.6;">
                             The standard ARK: Survival Evolved font. Clean, simple, and built-in.
@@ -173,7 +173,7 @@
                 }
                 else if (selectedFont == "chinese")
                 {
-                    <div class="content-card">
+                    <div class="glass-card">
                         <h3>Asian Font Setup</h3>
                         <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.85rem; line-height: 1.6;">
                             This font uses ARK's Asian localization files to change the in-game font appearance.
@@ -202,7 +202,7 @@
                 }
                 else if (selectedFont == "global")
                 {
-                    <div class="content-card">
+                    <div class="glass-card">
                         <h3>Global Font Setup</h3>
                         <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.85rem; line-height: 1.6;">
                             The Global font provides an enhanced visual experience. Follow the steps below to install.
